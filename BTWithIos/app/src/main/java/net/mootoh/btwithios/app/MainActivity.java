@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -177,9 +176,34 @@ public class MainActivity extends Activity {
                     byte[] value = characteristic.getValue();
                     int x = value[0];
                     Log.d("###", "value = " + x);
+
+                    writeSome(service_, gatt);
                 }
             }
+
+            @Override
+            public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                if (status == BluetoothGatt.GATT_WRITE_NOT_PERMITTED) {
+                    Log.d("###", "onCharacteristicWrite: write not permitted");
+                    return;
+                }
+                Log.d("###", "onCharacteristicWrite " + status);
+            }
         });
+    }
+
+    private void writeSome(BluetoothGattService service, BluetoothGatt gatt) {
+        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("721AC875-945E-434A-93D8-7AD8C740A51A"));
+        if (chr == null) {
+            Log.d("###", "no such characteristic");
+            return;
+        }
+
+        chr.setValue("written from android");
+        boolean hasWritten = gatt.writeCharacteristic(chr);
+        if (!hasWritten) {
+            Log.d("###", "failed in write request");
+        }
     }
 
     protected void readSome(BluetoothGattService service, BluetoothGatt gatt) {
@@ -193,6 +217,5 @@ public class MainActivity extends Activity {
         if (!hasRead) {
             Log.d("###", "failed in read request");
         }
-
     }
 }

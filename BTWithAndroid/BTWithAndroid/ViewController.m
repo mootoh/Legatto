@@ -47,11 +47,11 @@
         NSLog(@"peripheral state powered on");
         
         CBUUID *characteristicUUID = [CBUUID UUIDWithString:k_characteristicUUIDStirng];
-        CBCharacteristicProperties props = CBCharacteristicPropertyRead | CBCharacteristicPropertyNotify;
+        CBCharacteristicProperties props = CBCharacteristicPropertyRead | CBCharacteristicPropertyWrite | CBCharacteristicPropertyNotify;
 
-        Byte value = 0x10;
+//        Byte value = 0x10;
 //        CBMutableCharacteristic *characteristic = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:[NSData dataWithBytes:&value length:1] permissions:CBAttributePermissionsReadable];
-        CBMutableCharacteristic *characteristic = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:CBAttributePermissionsReadable];
+        CBMutableCharacteristic *characteristic = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:CBAttributePermissionsReadable | CBAttributePermissionsWriteable];
 
 
         CBUUID *serviceUUID = [CBUUID UUIDWithString:k_serviceUUIDStirng];
@@ -90,6 +90,16 @@
     NSData *data = [NSData dataWithBytes:&value length:1];
     request.value = data;
     [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
+}
+
+- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests {
+    NSLog(@"%s from %d", __PRETTY_FUNCTION__, requests.count);
+    for (CBATTRequest *request in requests) {
+        NSString *requestedString = [[NSString alloc] initWithData:request.value encoding:NSUTF8StringEncoding];
+        NSLog(@"requestedString: %@", requestedString);
+
+        [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
+    }
 }
 
 - (void)peripheralManagerDidStartAdvertising:(CBPeripheralManager *)peripheral error:(NSError *)error {
