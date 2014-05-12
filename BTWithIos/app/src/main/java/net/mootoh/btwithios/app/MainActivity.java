@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 public class MainActivity extends Activity {
     private static final int REQUEST_ENABLE_BT = 1;
+    static final String NOTIFIER_UUID_STRING = "42015324-6E63-412D-9B7F-257024D56460";
 
     BluetoothAdapter bluetoothAdapter_;
 
@@ -160,7 +162,8 @@ public class MainActivity extends Activity {
                         if (service.getUuid().equals(UUID.fromString("688C7F90-F424-4BC0-8508-AEDE43A4288D"))) {
                             Log.d("###", "found iPhone!");
                             service_ = service;
-                            readSome(service, gatt);
+//                            readSome(service, gatt);
+                            observe(service, gatt);
                             return;
                         }
                     }
@@ -182,14 +185,39 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 if (status == BluetoothGatt.GATT_WRITE_NOT_PERMITTED) {
                     Log.d("###", "onCharacteristicWrite: write not permitted");
                     return;
                 }
                 Log.d("###", "onCharacteristicWrite " + status);
             }
+
+            @Override
+            public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                Log.d("###", "onCharacteristicChanged ");
+                byte[] value = characteristic.getValue();
+                int x = value[0];
+                Log.d("###", "value = " + x);
+            }
         });
+    }
+
+    private void observe(BluetoothGattService service, BluetoothGatt gatt) {
+        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID_STRING));
+        if (! gatt.setCharacteristicNotification(chr, true)) {
+            Log.d("###", "failed to setCharacteristicNotification");
+            return;
+        }
+        for (BluetoothGattDescriptor descriptor : chr.getDescriptors()) {
+            Log.d("###", "descriptor: " + descriptor.getUuid());
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            if (! gatt.writeDescriptor(descriptor)) {
+                Log.d("###", "failed to write to the descriptor");
+            } else {
+                Log.d("###", "succeeded to write ENABLE_NOTIFICATION_VALUE");
+            }
+        }
     }
 
     private void writeSome(BluetoothGattService service, BluetoothGatt gatt) {
@@ -207,7 +235,7 @@ public class MainActivity extends Activity {
     }
 
     protected void readSome(BluetoothGattService service, BluetoothGatt gatt) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("721AC875-945E-434A-93D8-7AD8C740A51A"));
+        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
         if (chr == null) {
             Log.d("###", "no such characteristic");
             return;
