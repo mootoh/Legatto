@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC5B99E81921A7DB007B5D8A /* XNNearBy.m in Sources */ = {isa = PBXBuildFile; fileRef = FC5B99E71921A7DB007B5D8A /* XNNearBy.m */; };
 		FCDF15FC1911D4D00002575E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCDF15FB1911D4D00002575E /* Foundation.framework */; };
 		FCDF15FE1911D4D00002575E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCDF15FD1911D4D00002575E /* CoreGraphics.framework */; };
 		FCDF16001911D4D00002575E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCDF15FF1911D4D00002575E /* UIKit.framework */; };
@@ -35,6 +36,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FC5B99E61921A7DB007B5D8A /* XNNearBy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XNNearBy.h; sourceTree = "<group>"; };
+		FC5B99E71921A7DB007B5D8A /* XNNearBy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XNNearBy.m; sourceTree = "<group>"; };
 		FCDF15F81911D4D00002575E /* BTWithAndroid.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BTWithAndroid.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCDF15FB1911D4D00002575E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		FCDF15FD1911D4D00002575E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -123,6 +126,8 @@
 				FCDF16111911D4D00002575E /* ViewController.m */,
 				FCDF16131911D4D00002575E /* Images.xcassets */,
 				FCDF16021911D4D00002575E /* Supporting Files */,
+				FC5B99E61921A7DB007B5D8A /* XNNearBy.h */,
+				FC5B99E71921A7DB007B5D8A /* XNNearBy.m */,
 			);
 			path = BTWithAndroid;
 			sourceTree = "<group>";
@@ -253,6 +258,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC5B99E81921A7DB007B5D8A /* XNNearBy.m in Sources */,
 				FCDF16121911D4D00002575E /* ViewController.m in Sources */,
 				FCDF160C1911D4D00002575E /* AppDelegate.m in Sources */,
 				FCDF16081911D4D00002575E /* main.m in Sources */,
@@ -460,6 +466,7 @@
 				FCDF162C1911D4D00002575E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		FCDF162D1911D4D00002575E /* Build configuration list for PBXNativeTarget "BTWithAndroidTests" */ = {
 			isa = XCConfigurationList;
@@ -468,6 +475,7 @@
 				FCDF162F1911D4D00002575E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
