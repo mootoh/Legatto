@@ -13,7 +13,17 @@
 @end
 
 @interface XNPeerId : NSObject
+@property (nonatomic, strong) CBCharacteristic *characteristic;
+- (id) initWithIdentifier:(NSUUID *)uuid;
+@end
+
+@protocol XNAdvertiserDelegate
+- (void)didConnect:(XNPeerId *)peer;
 @end
 
 @interface XNAdvertiser : NSObject <CBPeripheralManagerDelegate>
+@property (nonatomic, weak) NSObject <XNAdvertiserDelegate> *delegate;
+
+- (void) send:(NSData *)data to:(XNPeerId *)peer;
+
 @end

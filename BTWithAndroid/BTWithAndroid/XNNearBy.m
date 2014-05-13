@@ -15,13 +15,24 @@
 
 #pragma mark - XNPeerId
 
+@interface XNPeerId ()
+@property (nonatomic, strong) NSUUID *uuid;
+@end
+
 @implementation XNPeerId
+- (id) initWithIdentifier:(NSUUID *)uuid {
+    self = [super init];
+    if (self) {
+        self.uuid = uuid;
+    }
+    return self;
+}
 @end
 
 #pragma mark - XNAdvertiser
 
 @interface XNAdvertiser ()
-@property (nonatomic) CBPeripheralManager *cbPeripheralManager;
+@property (nonatomic, strong) CBPeripheralManager *cbPeripheralManager;
 @property (nonatomic, strong) CBMutableService *service;
 @end
 
@@ -35,18 +46,20 @@
     return self;
 }
 
+- (void) send:(NSData *)data to:(XNPeerId *)peer {
+    if (! [self.cbPeripheralManager updateValue:data forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
+        NSLog(@"failed to send data to %@", peer.uuid);
+    }
+}
+
+@end
+
+@implementation XNAdvertiser (Private)
+
 - (CBMutableCharacteristic *) characteristicForNotifier {
     CBUUID *characteristicUUID = [CBUUID UUIDWithString:k_characteristicNotifierUUIDString];
     CBCharacteristicProperties props = CBCharacteristicPropertyNotify;
     return [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:0];
-}
-
-- (CBMutableCharacteristic *) characteristicForSender {
-    CBUUID *characteristicUUID = [CBUUID UUIDWithString:k_characteristicSenderUUIDString];
-    CBCharacteristicProperties props = CBCharacteristicPropertyRead | CBCharacteristicPropertyWrite | CBCharacteristicPropertyNotify;
-    CBMutableCharacteristic *chr = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:CBAttributePermissionsReadable | CBAttributePermissionsWriteable];
-    
-    return chr;
 }
 
 - (CBMutableCharacteristic *) characteristicForReceiver {
@@ -66,7 +79,7 @@
 #pragma mark CBPeripheralManagerDelegate
 
 - (void) peripheralManagerDidUpdateState:(CBPeripheralManager *)peripheral {
-    NSLog(@"peripheral manager status update: %ld", peripheral.state);
+    NSLog(@"peripheral manager status update: %d", peripheral.state);
     if (peripheral.state == CBPeripheralManagerStatePoweredOn) {
         NSLog(@"peripheral state powered on");
         
@@ -89,7 +102,11 @@
 - (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didSubscribeToCharacteristic:(CBCharacteristic *)characteristic {
     NSLog(@"%s, subscribed", __PRETTY_FUNCTION__);
     
-    [NSTimer scheduledTimerWithTimeInterval:2 target:self selector:@selector(notify:) userInfo:characteristic repeats:YES];
+    XNPeerId *peer = [[XNPeerId alloc] initWithIdentifier:central.identifier];
+    peer.characteristic = characteristic;
+
+    if ([self.delegate respondsToSelector:@selector(didConnect:)])
+         [self.delegate didConnect:peer];
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveReadRequest:(CBATTRequest *)request {
@@ -99,17 +116,6 @@
     NSData *data = [NSData dataWithBytes:&value length:1];
     request.value = data;
     [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
-}
-
-- (void) notify:(NSTimer *) timer {
-    NSLog(@"notifying");
-    NSString *str = @"notification from iOS";
-    CBCharacteristic *chr = (CBCharacteristic *)timer.userInfo;
-    
-    NSData *strData = [str dataUsingEncoding:NSUTF8StringEncoding];
-    if (! [self.cbPeripheralManager updateValue:strData forCharacteristic:chr onSubscribedCentrals:nil]) {
-        NSLog(@"failed to notify");
-    }
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests {

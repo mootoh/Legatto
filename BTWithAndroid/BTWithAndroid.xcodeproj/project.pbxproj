@@ -119,6 +119,8 @@
 		FCDF16011911D4D00002575E /* BTWithAndroid */ = {
 			isa = PBXGroup;
 			children = (
+				FC5B99E61921A7DB007B5D8A /* XNNearBy.h */,
+				FC5B99E71921A7DB007B5D8A /* XNNearBy.m */,
 				FCDF160A1911D4D00002575E /* AppDelegate.h */,
 				FCDF160B1911D4D00002575E /* AppDelegate.m */,
 				FCDF160D1911D4D00002575E /* Main.storyboard */,
@@ -126,8 +128,6 @@
 				FCDF16111911D4D00002575E /* ViewController.m */,
 				FCDF16131911D4D00002575E /* Images.xcassets */,
 				FCDF16021911D4D00002575E /* Supporting Files */,
-				FC5B99E61921A7DB007B5D8A /* XNNearBy.h */,
-				FC5B99E71921A7DB007B5D8A /* XNNearBy.m */,
 			);
 			path = BTWithAndroid;
 			sourceTree = "<group>";

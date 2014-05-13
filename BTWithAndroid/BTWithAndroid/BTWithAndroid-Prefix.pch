@@ -18,5 +18,4 @@
 #define k_serviceUUIDStirng @"688C7F90-F424-4BC0-8508-AEDE43A4288D"
 #define k_characteristicNotifierUUIDString @"42015324-6E63-412D-9B7F-257024D56460"
 #define k_characteristicReceiverUUIDStirng @"721AC875-945E-434A-93D8-7AD8C740A51A"
-#define k_characteristicSenderUUIDString   @"9321525D-08B6-4BDC-90C7-0C2B6234C52B"
 #define k_localName @"btbt"

@@ -10,8 +10,38 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "XNNearBy.h"
 
-@interface ViewController ()
+@interface XNNearByWrap : NSObject <XNAdvertiserDelegate>
 @property (nonatomic) XNAdvertiser *advertiser;
+@end
+
+@implementation XNNearByWrap
+
+- (id) init {
+    self = [super init];
+    if (self) {
+        self.advertiser = [[XNAdvertiser alloc] init];
+        self.advertiser.delegate = self;
+    }
+    return self;
+}
+
+- (void) didConnect:(XNPeerId *)peer {
+    [NSTimer scheduledTimerWithTimeInterval:2 target:self selector:@selector(sendMessage:) userInfo:peer repeats:YES];
+}
+
+- (void) sendMessage:(NSTimer *) timer {
+    NSLog(@"notifying");
+
+    XNPeerId *peer = (XNPeerId *)timer.userInfo;
+    NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
+
+    [self.advertiser send:data to:peer];
+}
+
+@end
+
+@interface ViewController ()
+@property (nonatomic) XNNearByWrap *xn;
 @end
 
 @implementation ViewController
@@ -20,7 +50,7 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
-    self.advertiser = [[XNAdvertiser alloc] init];
+    self.xn = [[XNNearByWrap alloc] init];
 }
 
 - (void)didReceiveMemoryWarning
