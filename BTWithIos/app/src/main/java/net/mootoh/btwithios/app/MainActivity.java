@@ -2,55 +2,50 @@ package net.mootoh.btwithios.app;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
-
-import java.util.UUID;
 
 
 public class MainActivity extends Activity {
     private static final int REQUEST_ENABLE_BT = 1;
-    static final String NOTIFIER_UUID_STRING = "42015324-6E63-412D-9B7F-257024D56460";
-
-    BluetoothAdapter bluetoothAdapter_;
+    private XNBrowser browser_;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(this, "BT not supported 1", Toast.LENGTH_SHORT).show();
-            finish();
+        setContentView(R.layout.activity_main);
+        browser_ = new XNBrowser(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (! browser_.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            return;
         }
 
-        // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-        // BluetoothAdapter through BluetoothManager.
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter_ = bluetoothManager.getAdapter();
+        browser_.startScan();
+    }
 
-        // Checks if Bluetooth is supported on the device.
-        if (bluetoothAdapter_ == null) {
-            Toast.makeText(this, "BT not supported 2", Toast.LENGTH_SHORT).show();
+    @Override
+    protected void onPause() {
+        super.onPause();
+        browser_.stopScan();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             finish();
             return;
         }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -70,180 +65,5 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private Handler handler_ = new Handler();
-    private boolean scanning_ = false;
-    private static final long SCAN_PERIOD = 10000;
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (!bluetoothAdapter_.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
-
-        UUID[] uuidToScan = { UUID.fromString("688C7F90-F424-4BC0-8508-AEDE43A4288D") };
-
-
-        handler_.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                bluetoothAdapter_.stopLeScan(leScanCallback_);
-                scanning_ = false;
-            }
-        }, SCAN_PERIOD);
-
-        bluetoothAdapter_.startLeScan(leScanCallback_);
-        scanning_ = true;
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        bluetoothAdapter_.stopLeScan(leScanCallback_);
-        scanning_ = false;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
-            finish();
-            return;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-    }
-
-    BluetoothAdapter.LeScanCallback leScanCallback_ = new BluetoothAdapter.LeScanCallback() {
-        @Override
-        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-            if (! scanning_)
-                return;
-            if (device.getName().equals("btbt")) {
-                Log.d("@@@", "found BT device: " + device.getAddress() + " " + device.getName());
-                scanning_ = false;
-                bluetoothAdapter_.stopLeScan(this);
-                connect(device);
-            }
-        }
-    };
-
-    protected void connect(BluetoothDevice device) {
-        device.connectGatt(this, false, new BluetoothGattCallback() {
-            BluetoothGattService service_;
-
-            @Override
-            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                super.onConnectionStateChange(gatt, status, newState);
-                Log.d("###", "got connection state changed: " + status + ", " + newState);
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("###", "connected successfully");
-
-                } else if (status == BluetoothGatt.GATT_FAILURE) {
-                    Log.d("###", "connection failed");
-                }
-
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    Log.d("###", "connected");
-                    gatt.discoverServices();
-                }
-                if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    Log.d("###", "disconnected");
-                }
-            }
-
-            @Override
-            // New services discovered
-            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("###", "service found");
-                    for (BluetoothGattService service : gatt.getServices()) {
-                        if (service.getUuid().equals(UUID.fromString("688C7F90-F424-4BC0-8508-AEDE43A4288D"))) {
-                            Log.d("###", "found iPhone!");
-                            service_ = service;
-//                            readSome(service, gatt);
-                            observe(service, gatt);
-                            return;
-                        }
-                    }
-                } else {
-                    Log.w("###", "onServicesDiscovered received: " + status);
-                }
-            }
-
-            @Override
-            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                Log.d("###", "onCharacteristicRead " + status);
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    byte[] value = characteristic.getValue();
-                    int x = value[0];
-                    Log.d("###", "value = " + x);
-
-                    writeSome(service_, gatt);
-                }
-            }
-
-            @Override
-            public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                if (status == BluetoothGatt.GATT_WRITE_NOT_PERMITTED) {
-                    Log.d("###", "onCharacteristicWrite: write not permitted");
-                    return;
-                }
-                Log.d("###", "onCharacteristicWrite " + status);
-            }
-
-            @Override
-            public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-                Log.d("###", "onCharacteristicChanged ");
-                byte[] value = characteristic.getValue();
-                int x = value[0];
-                Log.d("###", "value = " + x);
-            }
-        });
-    }
-
-    private void observe(BluetoothGattService service, BluetoothGatt gatt) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID_STRING));
-        if (! gatt.setCharacteristicNotification(chr, true)) {
-            Log.d("###", "failed to setCharacteristicNotification");
-            return;
-        }
-        for (BluetoothGattDescriptor descriptor : chr.getDescriptors()) {
-            Log.d("###", "descriptor: " + descriptor.getUuid());
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            if (! gatt.writeDescriptor(descriptor)) {
-                Log.d("###", "failed to write to the descriptor");
-            } else {
-                Log.d("###", "succeeded to write ENABLE_NOTIFICATION_VALUE");
-            }
-        }
-    }
-
-    private void writeSome(BluetoothGattService service, BluetoothGatt gatt) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("721AC875-945E-434A-93D8-7AD8C740A51A"));
-        if (chr == null) {
-            Log.d("###", "no such characteristic");
-            return;
-        }
-
-        chr.setValue("written from android");
-        boolean hasWritten = gatt.writeCharacteristic(chr);
-        if (!hasWritten) {
-            Log.d("###", "failed in write request");
-        }
-    }
-
-    protected void readSome(BluetoothGattService service, BluetoothGatt gatt) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
-        if (chr == null) {
-            Log.d("###", "no such characteristic");
-            return;
-        }
-
-        boolean hasRead = gatt.readCharacteristic(chr);
-        if (!hasRead) {
-            Log.d("###", "failed in read request");
-        }
     }
 }

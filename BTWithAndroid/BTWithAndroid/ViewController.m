@@ -10,7 +10,7 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "XNNearBy.h"
 
-@interface XNNearByWrap : NSObject <XNAdvertiserDelegate>
+@interface XNNearByWrap : NSObject <XNAdvertiserDelegate, XNSessionDelegate>
 @property (nonatomic) XNAdvertiser *advertiser;
 @end
 
@@ -25,17 +25,28 @@
     return self;
 }
 
-- (void) didConnect:(XNPeerId *)peer {
-    [NSTimer scheduledTimerWithTimeInterval:2 target:self selector:@selector(sendMessage:) userInfo:peer repeats:YES];
+- (void) didConnect:(XNPeerId *)peer session:(XNSession *)session {
+    session.delegate = self;
+    NSLog(@"connected to peer");
 }
 
-- (void) sendMessage:(NSTimer *) timer {
-    NSLog(@"notifying");
+- (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session {
+    [self notify:peer session:session];
+}
 
-    XNPeerId *peer = (XNPeerId *)timer.userInfo;
-    NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
+- (void) notify:(XNPeerId *)peer session:(XNSession *)session {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSLog(@"sending");
+        
+        NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
+        [session send:data to:peer];
+        [self notify:peer session:session];
+    });
+}
 
-    [self.advertiser send:data to:peer];
+- (void) didReceive:(NSData *)data from:(XNPeerId *)peer {
+    NSString *received = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSLog(@"received: %@", received);
 }
 
 @end
@@ -49,14 +60,7 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
     self.xn = [[XNNearByWrap alloc] init];
-}
-
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 @end
