@@ -20,6 +20,7 @@ import java.util.UUID;
 
 interface XNBrowserDelegate {
     void didGetReady();
+    void didReceive(byte[] bytes);
 }
 
 /**
@@ -30,6 +31,7 @@ public class XNBrowser {
     static final String SERVICE_UUID = "688C7F90-F424-4BC0-8508-AEDE43A4288D";
     static final String CONTROLLER_UUID = "5AE0C50F-2C8E-4336-AEAC-F1AF0A325006";
     static final long SCAN_PERIOD = 10000;
+    static final String TAG = "XNBrowser";
 
     private final Context context_;
     private BluetoothAdapter bluetoothAdapter_;
@@ -192,16 +194,14 @@ public class XNBrowser {
             // Notification
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-                Log.d("###", "onCharacteristicChanged ");
-                byte[] value = characteristic.getValue();
-                int x = value[0];
-                Log.d("###", "value = " + x);
+                if (delegate_ != null) {
+                    delegate_.didReceive(characteristic.getValue());
+                }
             }
         });
     }
 
     static int counter = 0;
-
     private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
         if (inputPortConnected_)
             return;
@@ -283,8 +283,8 @@ public class XNBrowser {
         outpPort_.setValue(bytes);
         boolean hasWritten = gatt_.writeCharacteristic(outpPort_);
         if (!hasWritten) {
-            Log.d("###", "failed in write request");
+            Log.d(TAG, "failed in write request");
         }
-        Log.d("###", "writeSome finished");
+        Log.d(TAG, "writeSome finished");
     }
 }

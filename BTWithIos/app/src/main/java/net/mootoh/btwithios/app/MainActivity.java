@@ -8,10 +8,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 
 public class MainActivity extends Activity implements XNBrowserDelegate {
+    public static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 1;
     private XNBrowser browser_;
 
@@ -74,6 +76,18 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
     @Override
     public void didGetReady() {
         sendSome();
+    }
+
+    @Override
+    public void didReceive(byte[] bytes) {
+        Log.d(TAG, "didReceive");
+        String str = "";
+        try {
+            str = new String(bytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "didReceive: " + str);
     }
 
     private void sendSome() {
