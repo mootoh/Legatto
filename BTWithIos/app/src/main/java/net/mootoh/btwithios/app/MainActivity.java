@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.nio.ByteBuffer;
 
-public class MainActivity extends Activity {
+
+public class MainActivity extends Activity implements XNBrowserDelegate {
     private static final int REQUEST_ENABLE_BT = 1;
     private XNBrowser browser_;
 
@@ -18,6 +21,7 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
         browser_ = new XNBrowser(this);
+        browser_.setDelegate(this);
     }
 
     @Override
@@ -65,5 +69,18 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void didGetReady() {
+        sendSome();
+    }
+
+    private void sendSome() {
+        ByteBuffer bb = ByteBuffer.allocate(40);
+        byte control = 0x01;
+        bb.put(control);
+        bb.put("written from android".getBytes());
+        browser_.send(bb.array());
     }
 }
