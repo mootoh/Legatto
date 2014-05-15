@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -87,6 +88,15 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             e.printStackTrace();
         }
         Log.d(TAG, "didReceive: " + str);
+
+        final String finalStr = str;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView tv = (TextView) findViewById(R.id.receivedTextView);
+                tv.setText(finalStr);
+            }
+        });
     }
 
     private void sendSome() {
