@@ -12,15 +12,21 @@
 
 @interface XNNearByWrap : NSObject <XNAdvertiserDelegate, XNSessionDelegate>
 @property (nonatomic) XNAdvertiser *advertiser;
+@property XNSession *session;
+@property XNPeerId *peerId;
+@property (weak) ViewController *viewController;
+
+- (void) send:(NSString *)message;
 @end
 
 @implementation XNNearByWrap
 
-- (id) init {
+- (id) initWithViewController:(ViewController *)vc {
     self = [super init];
     if (self) {
         self.advertiser = [[XNAdvertiser alloc] init];
         self.advertiser.delegate = self;
+        self.viewController = vc;
     }
     return self;
 }
@@ -31,7 +37,9 @@
 }
 
 - (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session {
-    [self notify:peer session:session];
+    self.session = session;
+    self.peerId = peer;
+//    [self notify:peer session:session];
 }
 
 - (void) notify:(XNPeerId *)peer session:(XNSession *)session {
@@ -45,8 +53,21 @@
 }
 
 - (void) didReceive:(NSData *)data from:(XNPeerId *)peer {
+    if (! [self isReady])
+        return;
     NSString *received = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     NSLog(@"received: %@", received);
+    self.viewController.recvLabel.text = received;
+}
+
+- (void) send:(NSString *)message {
+    if (! [self isReady])
+        return;
+    [self.session send:[message dataUsingEncoding:NSUTF8StringEncoding] to:self.peerId];
+}
+
+- (BOOL) isReady {
+    return self.session != nil && self.peerId != nil;
 }
 
 @end
@@ -60,7 +81,15 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    self.xn = [[XNNearByWrap alloc] init];
+    self.xn = [[XNNearByWrap alloc] initWithViewController:self];
 }
 
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    NSLog(@"sending text: %@", textField.text);
+    [self.xn send:textField.text];
+    textField.text = @"";
+    return YES;
+}
 @end

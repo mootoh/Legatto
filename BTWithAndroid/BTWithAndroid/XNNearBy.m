@@ -187,13 +187,10 @@
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests {
-    NSLog(@"%s count=%d", __PRETTY_FUNCTION__, requests.count);
-
     CBCentral *central = ((CBATTRequest *)requests[0]).central;
     for (CBATTRequest *request in requests) {
         NSAssert([request.central isEqual:central], @"all requests should have the same central");
     }
-
     NSLog(@"%s from %@", __PRETTY_FUNCTION__, central.identifier);
 
     XNSession *session = [self sessionFor:central];
