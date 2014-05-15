@@ -80,7 +80,6 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
 
     @Override
     public void didReceive(byte[] bytes) {
-        Log.d(TAG, "didReceive");
         String str = "";
         try {
             str = new String(bytes, "UTF-8");
@@ -91,10 +90,6 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
     }
 
     private void sendSome() {
-        ByteBuffer bb = ByteBuffer.allocate(40);
-        byte control = 0x01;
-        bb.put(control);
-        bb.put("written from android".getBytes());
-        browser_.send(bb.array());
+        browser_.send("written from android".getBytes());
     }
 }

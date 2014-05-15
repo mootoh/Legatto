@@ -10,7 +10,7 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 
 @interface XNPeerId : NSObject <NSCopying>
-@property (nonatomic, strong) CBCharacteristic *characteristic;
+@property (nonatomic, strong) CBMutableCharacteristic *characteristic;
 - (id) initWithIdentifier:(NSUUID *)uuid;
 @end
 

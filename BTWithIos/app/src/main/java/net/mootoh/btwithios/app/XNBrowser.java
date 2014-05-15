@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,6 +22,16 @@ import java.util.UUID;
 interface XNBrowserDelegate {
     void didGetReady();
     void didReceive(byte[] bytes);
+}
+
+class BTLEHandler {
+    Handler handler_ = new Handler();
+    long executeAt = 0;
+
+    public void post(Runnable r) {
+        executeAt = (executeAt == 0 ) ? SystemClock.uptimeMillis() : executeAt + 100;
+        handler_.postAtTime(r, executeAt);
+    }
 }
 
 /**
@@ -36,6 +47,7 @@ public class XNBrowser {
     private final Context context_;
     private BluetoothAdapter bluetoothAdapter_;
     private Handler handler_ = new Handler();
+    private BTLEHandler btHandler_ = new BTLEHandler();
     private boolean scanning_ = false;
     private boolean inputPortConnected_ = false;
     private XNBrowserDelegate delegate_;
@@ -107,7 +119,6 @@ public class XNBrowser {
             if (! scanning_)
                 return;
             if (device.getName().equals("btbt")) {
-                Log.d("@@@", "found BT device: " + device.getAddress() + " " + device.getName());
                 stopScan();
                 connect(device);
             }
@@ -122,21 +133,21 @@ public class XNBrowser {
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
-                Log.d("###", "got connection state changed: " + status + ", " + newState);
+//                Log.d("###", "got connection state changed: " + status + ", " + newState);
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("###", "GATT success");
+//                    Log.d("###", "GATT success");
 
                 } else if (status == BluetoothGatt.GATT_FAILURE) {
-                    Log.d("###", "GATT failure");
+//                    Log.d("###", "GATT failure");
                 }
 
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    Log.d("###", "GATT connected");
+//                    Log.d("###", "GATT connected");
                     gatt_ = gatt;
                     gatt.discoverServices();
                 }
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    Log.d("###", "GATT disconnected");
+//                    Log.d("###", "GATT disconnected");
                     gatt_ = null;
                 }
             }
@@ -145,18 +156,19 @@ public class XNBrowser {
             @Override
             public void onServicesDiscovered(final BluetoothGatt gatt, int status) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("###", "service discovered");
+//                    Log.d("###", "service discovered");
                     for (final BluetoothGattService service : gatt.getServices()) {
                         if (service.getUuid().equals(UUID.fromString(SERVICE_UUID))) {
-                            Log.d("###", "found iPhone!");
+//                            Log.d("###", "found iPhone!");
                             service_ = service;
 
                             openPortForOutput(service, gatt);
                             openPortForInput(service, gatt);
+                            return;
                         }
                     }
                 } else {
-                    Log.w("###", "onServicesDiscovered received: " + status);
+//                    Log.w("###", "onServicesDiscovered received: " + status);
                 }
             }
 
@@ -164,18 +176,15 @@ public class XNBrowser {
             @Override
             public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 Log.d("###", "onCharacteristicRead " + status);
-                if (status == BluetoothGatt.GATT_SUCCESS) {
 
+                if (status == BluetoothGatt.GATT_SUCCESS) {
                     if (characteristic.equals(controlPort_)) {
                         byte[] value = characteristic.getValue();
                         int x = value[0];
                         Log.d("###", "value = " + x);
                         if (x == 1) {
-                            Log.d("###", "inputPortConnected!!!");
+//                            Log.d("###", "inputPortConnected!!!");
                             inputPortConnected_ = true;
-                            if (delegate_ != null) {
-                                delegate_.didGetReady();
-                            }
                         }
                     }
                 }
@@ -184,11 +193,12 @@ public class XNBrowser {
             // Write
             @Override
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                Log.d("###", "onCharacteristicWrite " + status);
+
                 if (status == BluetoothGatt.GATT_WRITE_NOT_PERMITTED) {
                     Log.d("###", "onCharacteristicWrite: write not permitted");
                     return;
                 }
-                Log.d("###", "onCharacteristicWrite " + status);
             }
 
             int notificationStatus = 0;
@@ -200,67 +210,38 @@ public class XNBrowser {
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 if (notificationStatus == 0) { // message begins, header first
-//                    byte[] header = characteristic.getValue();
-//                    assert header[0] == 3;
+                    byte[] header = characteristic.getValue();
+                    assert header[0] == 3;
                     hasRead = 0;
                     toRead = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
-                    Log.d(TAG, "message length = " + toRead);
-
                     buf = ByteBuffer.allocate(toRead);
 
                     notificationStatus = 1;
                     return;
                 }
 
-                Log.d(TAG, "reading body, current pos=" + hasRead);
                 // body
                 byte[] val = characteristic.getValue();
                 hasRead += val.length;
                 buf.put(val);
 
                 if (hasRead >= toRead) {
-                    Log.d(TAG, "has read all");
                     notificationStatus = 0;
 
                     if (delegate_ != null) {
                         delegate_.didReceive(buf.array());
                     }
                 }
-                Log.d(TAG, "body has read, current pos=" + hasRead);
             }
         });
     }
 
-    static int counter = 0;
-        private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
-        if (inputPortConnected_)
-            return;
-
-        handler_.postDelayed(new Runnable() {
+    private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
+        // Observe
+        btHandler_.post(new Runnable() {
             @Override
             public void run() {
-                if (counter++ % 2 == 0)
-                    tryRead();
-                else
-                    tryObserve();
-                openPortForInput(service, gatt);
-            }
-
-            private void tryRead() {
-                BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(CONTROLLER_UUID));
-                if (chr == null) {
-                    Log.d("###", "no such characteristic for controller:" + CONTROLLER_UUID);
-                    return;
-                }
-                controlPort_ = chr;
-
-                boolean hasRead = gatt.readCharacteristic(chr);
-                if (!hasRead) {
-                    Log.d("###", "failed in read request");
-                }
-            }
-
-            private void tryObserve() {
+                Log.d(TAG, "observing..............");
                 BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
                 if (chr == null) {
                     Log.d("###", "no such characteristic for notification:" + NOTIFIER_UUID);
@@ -280,41 +261,73 @@ public class XNBrowser {
                     }
                 }
                 if (! enabled) {
-//                    throw new RuntimeException("failed to enable notification to characteristic");
                     Log.d("---", "failed to enable notification to characteristic");
+                    throw new RuntimeException("failed to enable notification to characteristic");
                 }
             }
-        }, 1000);
+        });
+        btHandler_.post(new Runnable() {
+            @Override
+            public void run() {
+                /*
+                Log.d(TAG, "reading..............");
+                BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(CONTROLLER_UUID));
+                if (chr == null) {
+                    Log.d("###", "no such characteristic for controller:" + CONTROLLER_UUID);
+                    return;
+                }
+                controlPort_ = chr;
+
+                boolean hasRead = gatt.readCharacteristic(chr);
+                if (!hasRead) {
+                    Log.d("###", "failed in read request");
+                }
+                */
+
+                if (delegate_ != null) {
+                    delegate_.didGetReady();
+                }
+            }
+        });
     }
 
     private void openPortForOutput(BluetoothGattService service, BluetoothGatt gatt) {
         BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("721AC875-945E-434A-93D8-7AD8C740A51A"));
         if (chr == null) {
-            Log.d("###", "");
             throw new RuntimeException("failed to locate output characteristic");
         }
         outpPort_ = chr;
     }
 
-    private void readSome(BluetoothGattService service, BluetoothGatt gatt) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
+    private void readSome(BluetoothGattService service, final BluetoothGatt gatt) {
+        final BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
         if (chr == null) {
             Log.d("###", "no such characteristic");
             return;
         }
 
-        boolean hasRead = gatt.readCharacteristic(chr);
-        if (!hasRead) {
-            Log.d("###", "failed in read request");
-        }
+        btHandler_.post(new Runnable() {
+            @Override
+            public void run() {
+                boolean hasRead = gatt.readCharacteristic(chr);
+                if (!hasRead) {
+                    Log.d("###", "failed in read request");
+                }
+            }
+        });
     }
 
-    public void send(byte[] bytes) {
-        outpPort_.setValue(bytes);
-        boolean hasWritten = gatt_.writeCharacteristic(outpPort_);
-        if (!hasWritten) {
-            Log.d(TAG, "failed in write request");
-        }
-        Log.d(TAG, "writeSome finished");
+    public void send(final byte[] bytes) {
+        btHandler_.post(new Runnable() {
+            @Override
+            public void run() {
+                outpPort_.setValue(bytes);
+                boolean hasWritten = gatt_.writeCharacteristic(outpPort_);
+                if (!hasWritten) {
+                    Log.d(TAG, "failed in write request");
+                }
+                Log.d(TAG, "writeSome finished");
+            }
+        });
     }
 }
