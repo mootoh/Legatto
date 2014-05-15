@@ -18,6 +18,7 @@
 @property (nonatomic, strong) NSMutableDictionary *sessions;
 @property (nonatomic, strong) NSMutableDictionary *peers;
 @property (nonatomic, strong) NSMutableDictionary *subscribedPeers;
+@property (nonatomic, strong) CBCharacteristic *controlCharacteristic;
 @end
 
 @interface XNAdvertiser (Private)
@@ -60,8 +61,29 @@
 }
 
 - (void) send:(NSData *)data to:(XNPeerId *)peer {
-    if (! [self.advertiser.cbPeripheralManager updateValue:data forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
-        NSLog(@"failed to send data to %@", peer.uuid);
+    // hash data into chunks of 20 octets
+    NSUInteger len = data.length;
+    uint32_t ulen = (uint32_t)len;
+//    ulen = htonl(ulen);
+    char *ulenp = (char *)ulen;
+    
+    // header
+    const char buf[5] = {0x03, ulenp[0], ulenp[1], ulenp[2], ulenp[3]};
+    NSData *header = [NSData dataWithBytes:buf length:5];
+
+    if (! [self.advertiser.cbPeripheralManager updateValue:header forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
+        NSLog(@"failed to send header data to %@", peer.uuid);
+    }
+
+    NSUInteger loc = 0;
+    while (len > 0) {
+        NSData *chunk = [data subdataWithRange:NSMakeRange(loc, 20)];
+        loc += 20;
+        len -= 20;
+
+        if (! [self.advertiser.cbPeripheralManager updateValue:chunk forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
+            NSLog(@"failed to send data to %@", peer.uuid);
+        }
     }
     NSLog(@"should be sent data to observers");
 }
@@ -126,10 +148,9 @@
 }
 
 - (void) send:(CBCharacteristic *)characteristic {
+    /*
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
         NSLog(@"sending");
-        
         NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
         if (! [self.cbPeripheralManager updateValue:data forCharacteristic:characteristic onSubscribedCentrals:nil]) {
             NSLog(@"failed to send data to");
@@ -137,6 +158,45 @@
 
         [self send:characteristic];
     });
+     */
+
+    NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
+
+    // hash data into chunks of 20 octets
+    NSUInteger len = data.length;
+    uint32_t ulen = (uint32_t)len;
+    NSLog(@"len = %d", len);
+    
+    // header
+    char buf[8];
+    buf[0] = 0x03;
+    memcpy(buf+1, &ulen, sizeof(ulen));
+    NSData *header = [NSData dataWithBytes:buf length:5];
+    
+    if (! [self.cbPeripheralManager updateValue:header forCharacteristic:characteristic onSubscribedCentrals:nil]) {
+        NSLog(@"failed to send header data");
+    }
+
+    NSUInteger loc = 0;
+    dispatch_time_t notifyAt = DISPATCH_TIME_NOW;
+    while (len > 0) {
+        notifyAt = dispatch_time(notifyAt, (int64_t)(100 * NSEC_PER_MSEC)); // tricky here, since BT LE queue can be easily fulled up.
+
+        dispatch_after(notifyAt, dispatch_get_main_queue(), ^{
+            NSUInteger lengthToSend = MIN(20, len);
+            NSData *chunk = [data subdataWithRange:NSMakeRange(loc, lengthToSend)];
+            if (! [self.cbPeripheralManager updateValue:chunk forCharacteristic:characteristic onSubscribedCentrals:nil]) {
+                NSLog(@"failed to send data %d, %d %d", loc, lengthToSend, len);
+            } else {
+                NSLog(@"has sent %d, %d %d", loc, lengthToSend, len);
+            }
+        });
+        loc += 20;
+        if ((NSInteger)len - 20 < 0)
+            len = 0;
+        else
+            len -= 20;
+    }
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveReadRequest:(CBATTRequest *)request {
@@ -151,7 +211,6 @@
         NSData *data = [NSData dataWithBytes:&value length:1];
         request.value = data;
     }
-//    Byte value = arc4random()&0xff;
     [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
 }
 
@@ -172,6 +231,23 @@
 
     NSLog(@"%s from %@", __PRETTY_FUNCTION__, central.identifier);
 
+    CBATTRequest *firstRequest = requests[0];
+    CBCharacteristic *firstCharacteristic = firstRequest.characteristic;
+    if ([firstCharacteristic isEqual:self.controlCharacteristic]) {
+        NSLog(@"write request for controller");
+        const Byte *bytes = firstRequest.value.bytes;
+        if (bytes[0] & k_controlCentralConnect) {
+            NSAssert(self.sessions[central.identifier] == nil, @"session should not exist before the first request");
+
+            XNSession *session = [[XNSession alloc] initWithAdvertiser:self];
+            self.sessions[central.identifier] = session;
+            
+            if ([self.delegate respondsToSelector:@selector(didConnect:session:)]) {
+                [self.delegate didConnect:peer session:session];
+            }
+}
+    }
+    
     BOOL first = YES;
     for (CBATTRequest *request in requests) {
         XNSession *session = nil;
@@ -242,7 +318,9 @@
 - (CBMutableService *) setupService {
     CBUUID *serviceUUID = [CBUUID UUIDWithString:k_serviceUUIDStirng];
     CBMutableService *service = [[CBMutableService alloc] initWithType:serviceUUID primary:YES];
-    service.characteristics = @[[self characteristicForNotifier], [self characteristicForReceiver], [self characteristicForController]];
+    
+    self.controlCharacteristic = [self characteristicForController];
+    service.characteristics = @[[self characteristicForNotifier], [self characteristicForReceiver], self.controlCharacteristic];
     return service;
 }
 

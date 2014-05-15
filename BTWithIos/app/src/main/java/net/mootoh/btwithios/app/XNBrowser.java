@@ -191,18 +191,48 @@ public class XNBrowser {
                 Log.d("###", "onCharacteristicWrite " + status);
             }
 
+            int notificationStatus = 0;
+            int hasRead = 0;
+            int toRead = 0;
+            ByteBuffer buf;
+
             // Notification
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-                if (delegate_ != null) {
-                    delegate_.didReceive(characteristic.getValue());
+                if (notificationStatus == 0) { // message begins, header first
+//                    byte[] header = characteristic.getValue();
+//                    assert header[0] == 3;
+                    hasRead = 0;
+                    toRead = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
+                    Log.d(TAG, "message length = " + toRead);
+
+                    buf = ByteBuffer.allocate(toRead);
+
+                    notificationStatus = 1;
+                    return;
                 }
+
+                Log.d(TAG, "reading body, current pos=" + hasRead);
+                // body
+                byte[] val = characteristic.getValue();
+                hasRead += val.length;
+                buf.put(val);
+
+                if (hasRead >= toRead) {
+                    Log.d(TAG, "has read all");
+                    notificationStatus = 0;
+
+                    if (delegate_ != null) {
+                        delegate_.didReceive(buf.array());
+                    }
+                }
+                Log.d(TAG, "body has read, current pos=" + hasRead);
             }
         });
     }
 
     static int counter = 0;
-    private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
+        private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
         if (inputPortConnected_)
             return;
 
@@ -266,7 +296,7 @@ public class XNBrowser {
         outpPort_ = chr;
     }
 
-    protected void readSome(BluetoothGattService service, BluetoothGatt gatt) {
+    private void readSome(BluetoothGattService service, BluetoothGatt gatt) {
         BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
         if (chr == null) {
             Log.d("###", "no such characteristic");
