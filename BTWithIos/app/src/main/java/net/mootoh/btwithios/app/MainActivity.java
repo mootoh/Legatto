@@ -10,6 +10,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
@@ -36,7 +37,8 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String str = v.getText().toString();
-                browser_.send(str.getBytes());
+                if (browser_.isReady())
+                    browser_.send(str.getBytes());
                 appendText("me: " + str);
                 et.getEditableText().clear();
                 return true;
@@ -110,7 +112,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             e.printStackTrace();
         }
         Log.d(TAG, "didReceive: " + str);
-        appendText("   " + str);
+        appendText("ios: " + str);
     }
 
     private void sendSome() {
@@ -121,8 +123,17 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                TextView tv = (TextView) findViewById(R.id.recvTextView);
+                final TextView tv = (TextView) findViewById(R.id.recvTextView);
                 tv.append("\n" + text);
+
+                // scroll to bottom
+                final ScrollView sv = (ScrollView)findViewById(R.id.scroller);
+                sv.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        sv.smoothScrollTo(0,tv.getBottom());
+                    }
+                });
             }
         });
     }

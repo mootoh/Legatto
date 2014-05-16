@@ -45,7 +45,7 @@ public class XNBrowser {
     static final long SCAN_PERIOD = 10000;
     static final String TAG = "XNBrowser";
 
-    private String identifier = "xnb_an";
+    private String identifier = "an";
 
     private final Context context_;
     private BluetoothAdapter bluetoothAdapter_;
@@ -110,7 +110,8 @@ public class XNBrowser {
     }
 
     public boolean isReady() {
-        return inputPortConnected_;
+//        return inputPortConnected_;
+        return hasIdentifierSet;
     }
 
     public void setDelegate(XNBrowserDelegate dg) {
