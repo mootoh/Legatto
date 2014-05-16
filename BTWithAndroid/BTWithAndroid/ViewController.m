@@ -34,30 +34,32 @@
 - (void) didConnect:(XNPeerId *)peer session:(XNSession *)session {
     session.delegate = self;
     NSLog(@"connected to peer");
+    /*
+    NSMutableAttributedString *as = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"   %@ connected", peer.identifier]];
+    [as addAttribute:NSForegroundColorAttributeName value:[UIColor grayColor] range:NSMakeRange(0, as.length)];
+    [self.viewController appendAttributedTextToLog:as];
+     */
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %@ connected", peer.identifier]];
+}
+
+- (void) didDisconnect:(XNPeerId *)peer session:(XNSession *)session {
+    self.session = nil;
+    self.peerId = nil;
+
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %@ disconnected", peer.identifier]];
 }
 
 - (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session {
     self.session = session;
     self.peerId = peer;
-//    [self notify:peer session:session];
-}
-
-- (void) notify:(XNPeerId *)peer session:(XNSession *)session {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSLog(@"sending");
-        
-        NSData *data = [@"notification from iOS" dataUsingEncoding:NSUTF8StringEncoding];
-        [session send:data to:peer];
-        [self notify:peer session:session];
-    });
 }
 
 - (void) didReceive:(NSData *)data from:(XNPeerId *)peer {
     if (! [self isReady])
         return;
     NSString *received = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"received: %@", received);
-    self.viewController.recvLabel.text = received;
+    NSLog(@"received from %@: %@", peer.identifier, received);
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"%@: %@", peer.identifier, received]];
 }
 
 - (void) send:(NSString *)message {
@@ -82,14 +84,33 @@
 {
     [super viewDidLoad];
     self.xn = [[XNNearByWrap alloc] initWithViewController:self];
+    [self.inputTextField becomeFirstResponder];
+}
+
+- (void) scrollLogToBottom {
+}
+
+- (void) appendTextToLog:(NSString *)text {
+    self.logTextView.text = [self.logTextView.text stringByAppendingFormat:@"\n%@", text];
+}
+
+- (void) appendAttributedTextToLog:(NSAttributedString *)attributedString {
+    self.logTextView.attributedText = attributedString;
+}
+
+- (IBAction) sendText {
+    NSString *text = self.inputTextField.text;
+    NSLog(@"sending text: %@", text);
+    [self.xn send:text];
+    [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
+    self.inputTextField.text = @"";
+//    [self scrollLogToBottom];
 }
 
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
-    NSLog(@"sending text: %@", textField.text);
-    [self.xn send:textField.text];
-    textField.text = @"";
+    [self sendText];
     return YES;
 }
 @end

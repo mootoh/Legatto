@@ -9,6 +9,11 @@
 #import <UIKit/UIKit.h>
 
 @interface ViewController : UIViewController <UITextFieldDelegate>
-@property (weak, nonatomic) IBOutlet UILabel *recvLabel;
+@property (weak, nonatomic) IBOutlet UITextView *logTextView;
+@property (weak, nonatomic) IBOutlet UITextField *inputTextField;
+
+- (IBAction) sendText;
+- (void) appendTextToLog:(NSString *)text;
+- (void) appendAttributedTextToLog:(NSAttributedString *)attributedString;
 
 @end

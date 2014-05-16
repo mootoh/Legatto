@@ -12,6 +12,11 @@
 @property (nonatomic, strong) NSUUID *uuid;
 @end
 
+enum {
+    STATE_SUBSCRIBED = 0x01,
+    STATE_IDENTIFIER_RECEIVED = 0x02
+    
+};
 @interface XNAdvertiser ()
 @property (readonly, nonatomic, strong) CBPeripheralManager *cbPeripheralManager;
 @property (nonatomic, strong) CBMutableService *service;
@@ -19,6 +24,7 @@
 @property (nonatomic, strong) NSMutableDictionary *peers;
 @property (nonatomic, strong) NSMutableDictionary *subscribedPeers;
 @property (nonatomic, strong) CBCharacteristic *controlCharacteristic;
+@property int state;
 @end
 
 @interface XNAdvertiser (Private)
@@ -106,8 +112,17 @@
         self.sessions = [NSMutableDictionary dictionary];
         self.peers = [NSMutableDictionary dictionary];
         self.subscribedPeers = [NSMutableDictionary dictionary];
+        self.state = 0;
     }
     return self;
+}
+
+- (void) checkReady:(XNPeerId *)peer session:(XNSession *)session {
+    if (self.state & STATE_SUBSCRIBED && self.state & STATE_IDENTIFIER_RECEIVED) {
+        if ([self.delegate respondsToSelector:@selector(didConnect:session:)]) {
+            [self.delegate didConnect:peer session:session];
+        }
+    }
 }
 
 #pragma mark CBPeripheralManagerDelegate
@@ -140,15 +155,30 @@
     XNSession *session = [self sessionFor:central];
     XNPeerId *peer = [self peerIdFor:central];
     
-    if ([self.delegate respondsToSelector:@selector(didConnect:session:)]) {
-        [self.delegate didConnect:peer session:session];
-    }
-
     peer.characteristic = characteristic;
     
+    self.state |= STATE_SUBSCRIBED;
+    [self checkReady:peer session:session];
+
     if ([self.delegate respondsToSelector:@selector(gotReadyForSend:session:)]) {
         [self.delegate gotReadyForSend:peer session:session];
     }
+}
+
+- (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didUnsubscribeFromCharacteristic:(CBCharacteristic *)characteristic {
+    NSLog(@"%s, unsubscribed %@", __PRETTY_FUNCTION__, central.identifier);
+
+    XNSession *session = [self sessionFor:central];
+    XNPeerId *peer = [self peerIdFor:central];
+
+    if ([self.delegate respondsToSelector:@selector(didDisconnect:session:)]) {
+        [self.delegate didDisconnect:peer session:session];
+    }
+
+    [self.subscribedPeers removeObjectForKey:central.identifier];
+    [self.sessions removeObjectForKey:central.identifier];
+    [self.peers removeObjectForKey:central.identifier];
+    self.state = 0;
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveReadRequest:(CBATTRequest *)request {
@@ -164,6 +194,46 @@
         request.value = data;
     }
     [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
+}
+
+- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests {
+    CBCentral *central = ((CBATTRequest *)requests[0]).central;
+    for (CBATTRequest *request in requests) {
+        NSAssert([request.central isEqual:central], @"all requests should have the same central");
+    }
+    NSLog(@"%s from %@", __PRETTY_FUNCTION__, central.identifier);
+    
+    XNSession *session = [self sessionFor:central];
+    XNPeerId *peerId = [self peerIdFor:central];
+    
+    CBATTRequest *firstRequest = requests[0];
+    if ([firstRequest.characteristic isEqual:self.controlCharacteristic]) {
+        NSUInteger len = firstRequest.value.length;
+        char *buf = (char *)firstRequest.value.bytes;
+        if (buf[0] & 0x05) { // set identifier
+            NSString *identifier = [[NSString alloc] initWithBytes:buf+1 length:len-1 encoding:NSUTF8StringEncoding];
+            NSLog(@"identifier = %@", identifier);
+            peerId.identifier = identifier;
+
+            self.state |= STATE_IDENTIFIER_RECEIVED;
+            [self checkReady:peerId session:session];
+        }
+            
+        [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
+        return;
+    }
+    
+    NSMutableData *concatenated = [NSMutableData data];
+    
+    for (CBATTRequest *request in requests) {
+        [concatenated appendData:request.value];
+    }
+    
+    if ([session.delegate respondsToSelector:@selector(didReceive:from:)]) {
+        [session.delegate didReceive:concatenated from:peerId];
+    }
+    
+    [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
 }
 
 - (XNPeerId *) peerIdFor:(CBCentral *)central {
@@ -184,29 +254,6 @@
         self.sessions[central.identifier] = session;
     }
     return session;
-}
-
-- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests {
-    CBCentral *central = ((CBATTRequest *)requests[0]).central;
-    for (CBATTRequest *request in requests) {
-        NSAssert([request.central isEqual:central], @"all requests should have the same central");
-    }
-    NSLog(@"%s from %@", __PRETTY_FUNCTION__, central.identifier);
-
-    XNSession *session = [self sessionFor:central];
-    XNPeerId *peerId = [self peerIdFor:central];
-
-    NSMutableData *concatenated = [NSMutableData data];
-
-    for (CBATTRequest *request in requests) {
-        [concatenated appendData:request.value];
-    }
-
-    if ([session.delegate respondsToSelector:@selector(didReceive:from:)]) {
-        [session.delegate didReceive:concatenated from:peerId];
-    }
-
-    [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
 }
 
 - (void)peripheralManagerDidStartAdvertising:(CBPeripheralManager *)peripheral error:(NSError *)error {
@@ -235,8 +282,8 @@
 
 - (CBMutableCharacteristic *) characteristicForController {
     CBUUID *characteristicUUID = [CBUUID UUIDWithString:k_characteristicControllerUUIDString];
-    CBCharacteristicProperties props = CBCharacteristicPropertyRead;
-    return [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:CBAttributePermissionsReadable];
+    CBCharacteristicProperties props = CBCharacteristicPropertyRead | CBCharacteristicPropertyWrite;
+    return [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:CBAttributePermissionsReadable | CBAttributePermissionsWriteable];
 }
 
 

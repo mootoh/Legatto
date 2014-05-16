@@ -5,8 +5,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
@@ -25,6 +28,17 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
         setContentView(R.layout.activity_main);
         browser_ = new XNBrowser(this);
         browser_.setDelegate(this);
+
+        final EditText et = (EditText)findViewById(R.id.sendEditText);
+        et.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                String str = v.getText().toString();
+                browser_.send(str.getBytes());
+                et.getEditableText().clear();
+                return true;
+            }
+        });
     }
 
     @Override

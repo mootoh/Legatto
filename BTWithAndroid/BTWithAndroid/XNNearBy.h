@@ -12,6 +12,7 @@
 @interface XNPeerId : NSObject <NSCopying>
 @property (nonatomic, strong) CBMutableCharacteristic *characteristic;
 - (id) initWithIdentifier:(NSUUID *)uuid;
+@property(nonatomic, strong) NSString *identifier;
 @end
 
 @protocol XNSessionDelegate
@@ -25,6 +26,7 @@
 
 @protocol XNAdvertiserDelegate
 - (void)didConnect:(XNPeerId *)peer session:(XNSession *)session;
+- (void)didDisconnect:(XNPeerId *)peer session:(XNSession *)session;
 - (void)gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session;
 @end
 

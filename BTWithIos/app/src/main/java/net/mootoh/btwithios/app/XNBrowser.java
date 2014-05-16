@@ -44,6 +44,8 @@ public class XNBrowser {
     static final long SCAN_PERIOD = 10000;
     static final String TAG = "XNBrowser";
 
+    private String identifier = "xnb_an";
+
     private final Context context_;
     private BluetoothAdapter bluetoothAdapter_;
     private Handler handler_ = new Handler();
@@ -269,8 +271,7 @@ public class XNBrowser {
         btHandler_.post(new Runnable() {
             @Override
             public void run() {
-                /*
-                Log.d(TAG, "reading..............");
+                Log.d(TAG, "controller..............");
                 BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(CONTROLLER_UUID));
                 if (chr == null) {
                     Log.d("###", "no such characteristic for controller:" + CONTROLLER_UUID);
@@ -278,14 +279,15 @@ public class XNBrowser {
                 }
                 controlPort_ = chr;
 
-                boolean hasRead = gatt.readCharacteristic(chr);
-                if (!hasRead) {
-                    Log.d("###", "failed in read request");
-                }
-                */
+                ByteBuffer bb = ByteBuffer.allocate(1 + identifier.length());
+                byte code = 0x05;
+                bb.put(code);
+                bb.put(identifier.getBytes());
+                chr.setValue(bb.array());
 
-                if (delegate_ != null) {
-                    delegate_.didGetReady();
+                boolean hasWrite = gatt.writeCharacteristic(chr);
+                if (!hasWrite) {
+                    Log.d("###", "failed in write request to controller");
                 }
             }
         });
