@@ -18,16 +18,23 @@ app.get('/', function(req, res) {
 });
 
 app.post('/upload', multipartMiddleware, function(req, res) {
+    for (var k in req.body) {
+        console.log(k);
+    }
+
+    var name= fs.readdirSync(dirToStore).length + 1;
+    var url = 'http://' + req.headers.host + '/uploads/' + name + '.jpg';;
+
+    console.log(req.files);
+
     fs.readFile(req.files.image.path, function (err, data) {
-        var name= (fs.readdirSync(dirToStore).length + 1) + '.jpg';
-
-        var url = 'http://' + req.headers.host + '/uploads/' + name;
-
-        fs.writeFile(dirToStore + '/' + name, data, function(err) {
+        fs.writeFile(dirToStore + '/' + name + '.jpg', data, function(err) {
             console.log('saved ' + url);
         });
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(url);
+        //res.writeHead(200, 'application/json');
+        res.set('Content-Type', 'application/json');
+        var urlForGet = 'http://' + req.headers.host + '/img/' + name;
+        res.end(JSON.stringify({"url":urlForGet}));
     });
 });
 

@@ -21,4 +21,6 @@
 #define k_characteristicReceiverUUIDStirng   @"721AC875-945E-434A-93D8-7AD8C740A51A"
 #define k_localName @"btbt"
 
+#define k_mediatorHostAndPort @"localhost:2015"
+
 #define k_controlCentralConnect 0x01

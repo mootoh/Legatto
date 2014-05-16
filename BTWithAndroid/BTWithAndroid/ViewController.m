@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import <CoreBluetooth/CoreBluetooth.h>
+#import "AFNetworking/AFNetworking.h"
 #import "XNNearBy.h"
 
 @interface XNNearByWrap : NSObject <XNAdvertiserDelegate, XNSessionDelegate>
@@ -110,6 +111,62 @@
         [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
     }
     self.inputTextField.text = @"";
+}
+- (IBAction)sendPhoto:(id)sender {
+    UIImagePickerController *ipc = [[UIImagePickerController alloc] init];
+    /*
+    ipc.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:UIImagePickerControllerSourceTypeCamera];
+    ipc.sourceType = UIImagePickerControllerSourceTypeCamera;
+    ipc.allowsEditing = NO;
+     */
+    ipc.delegate = self;
+    [self presentViewController:ipc animated:YES completion:nil];
+}
+
+#pragma mark - UIImagePickerController
+
+// http://stackoverflow.com/questions/2658738/the-simplest-way-to-resize-an-uiimage
++ (UIImage *)imageWithImage:(UIImage *)image scaledToSize:(CGSize)newSize {
+    //UIGraphicsBeginImageContext(newSize);
+    // In next line, pass 0.0 to use the current device's pixel scaling factor (and thus account for Retina resolution).
+    // Pass 1.0 to force exact pixel size.
+    UIGraphicsBeginImageContextWithOptions(newSize, NO, 0.0);
+    [image drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return newImage;
+}
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+    UIImage *image = (UIImage *)[info objectForKey:UIImagePickerControllerOriginalImage];
+    UIImage *smallerImage = [ViewController imageWithImage:image scaledToSize:CGSizeMake(240, 240)];
+    NSData *imageData = UIImageJPEGRepresentation(smallerImage, 1.0);
+    
+    NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)[0];
+    NSString *path = [cacheDir stringByAppendingPathComponent:@"tmp.jpg"];
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (! [fm createFileAtPath:path contents:imageData attributes:nil]) {
+        NSLog(@"failed to save a temporally file");
+        return;
+    }
+
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager POST:[NSString stringWithFormat:@"http://%@/upload", k_mediatorHostAndPort] parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+        [formData appendPartWithFileData:imageData name:@"image" fileName:path mimeType:@"image/jpeg"];
+    } success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSLog(@"Success: %@", responseObject);
+        NSString *urlString = ((NSDictionary *)responseObject)[@"url"];
+
+        NSURL *url = [NSURL URLWithString:urlString];
+        if ([self.xn isReady]) {
+            [self.xn.session sendURL:url to:self.xn.peerId];
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"Error: %@", error);
+    }];
+
+    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 #pragma mark - UITextFieldDelegate

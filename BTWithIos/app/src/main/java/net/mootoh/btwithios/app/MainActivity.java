@@ -159,7 +159,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
     @Override
     public void didReceiveURL(final URL url) {
         Log.d(TAG, "url received: " + url);
-        if (url.getPath().endsWith(".jpg")) {
+//        if (url.getPath().endsWith(".jpg")) {
             final MainActivity self = this;
             runOnUiThread(new Runnable() {
                 @Override
@@ -179,7 +179,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
                     });
                 }
             });
-        }
+//        }
     }
 
     private void sendSome() {

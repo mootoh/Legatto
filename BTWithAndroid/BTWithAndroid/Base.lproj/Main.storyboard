@@ -32,7 +32,7 @@
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <action selector="sendText" destination="vXZ-lx-hvc" eventType="touchUpInside" id="XIg-ON-mP5"/>
+                                    <action selector="sendPhoto:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="sM0-6R-JYO"/>
                                 </connections>
                             </button>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N5m-0c-r7J">
