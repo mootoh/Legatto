@@ -3,17 +3,29 @@ package net.mootoh.btwithios.app;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 public class MainActivity extends Activity implements XNBrowserDelegate {
@@ -113,6 +125,61 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
         }
         Log.d(TAG, "didReceive: " + str);
         appendText("ios: " + str);
+    }
+
+    class ImageDownloadTask extends AsyncTask<URL, Integer, Bitmap> {
+        private final ImageView imageView;
+
+        ImageDownloadTask(ImageView iv) {
+            imageView = iv;
+        }
+
+        @Override
+        protected Bitmap doInBackground(URL... params) {
+            URL url = params[0];
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection)url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                InputStream input = connection.getInputStream();
+                Bitmap bitmap = BitmapFactory.decodeStream(input);
+                return bitmap;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            imageView.setImageBitmap(bitmap);
+        }
+    }
+    @Override
+    public void didReceiveURL(final URL url) {
+        Log.d(TAG, "url received: " + url);
+        if (url.getPath().endsWith(".jpg")) {
+            final MainActivity self = this;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    final ImageView iv = new ImageView(self, null);
+                    ImageDownloadTask task = new ImageDownloadTask(iv);
+                    task.execute(url);
+                    final LinearLayout layout = (LinearLayout)findViewById(R.id.rootLinearLayout);
+                    layout.addView(iv);
+
+                    iv.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            layout.removeView(iv);
+                            return true;
+                        }
+                    });
+                }
+            });
+        }
     }
 
     private void sendSome() {

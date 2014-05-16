@@ -11,8 +11,7 @@
 
 @interface XNPeerId : NSObject <NSCopying>
 @property (nonatomic, strong) CBMutableCharacteristic *characteristic;
-- (id) initWithIdentifier:(NSUUID *)uuid;
-@property(nonatomic, strong) NSString *identifier;
+@property (nonatomic, strong) NSString *identifier;
 @end
 
 @protocol XNSessionDelegate
@@ -22,12 +21,13 @@
 @interface XNSession : NSObject
 @property (nonatomic, weak) NSObject <XNSessionDelegate> *delegate;
 - (void) send:(NSData *)data to:(XNPeerId *)peer;
+- (void) sendURL:(NSURL *)url to:(XNPeerId *)peer;
 @end
 
 @protocol XNAdvertiserDelegate
-- (void)didConnect:(XNPeerId *)peer session:(XNSession *)session;
-- (void)didDisconnect:(XNPeerId *)peer session:(XNSession *)session;
-- (void)gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session;
+- (void) didConnect:(XNPeerId *)peer session:(XNSession *)session;
+- (void) didDisconnect:(XNPeerId *)peer session:(XNSession *)session;
+- (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session;
 @end
 
 @interface XNAdvertiser : NSObject <CBPeripheralManagerDelegate>

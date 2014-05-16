@@ -10,13 +10,19 @@
 
 @interface XNPeerId ()
 @property (nonatomic, strong) NSUUID *uuid;
+- (id) initWithIdentifier:(NSUUID *)uuid;
 @end
 
 enum {
     STATE_SUBSCRIBED = 0x01,
     STATE_IDENTIFIER_RECEIVED = 0x02
-    
 };
+
+enum {
+    HEADER_KEY_NORMAL = 0x03,
+    HEADER_KEY_URL    = 0x05
+};
+
 @interface XNAdvertiser ()
 @property (readonly, nonatomic, strong) CBPeripheralManager *cbPeripheralManager;
 @property (nonatomic, strong) CBMutableService *service;
@@ -66,21 +72,21 @@ enum {
     return self;
 }
 
-- (void) send:(NSData *)data to:(XNPeerId *)peer {
+- (void) send:(NSData *)data to:(XNPeerId *)peer as:(NSInteger)key {
     // hash data into chunks of 20 octets
     NSUInteger len = data.length;
     uint32_t ulen = (uint32_t)len;
     
     // header
     char buf[8];
-    buf[0] = 0x03;
+    buf[0] = key;
     memcpy(buf+1, &ulen, sizeof(ulen));
     NSData *header = [NSData dataWithBytes:buf length:5];
     
     if (! [self.advertiser.cbPeripheralManager updateValue:header forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
         NSLog(@"failed to send header data");
     }
-
+    
     // body
     NSUInteger loc = 0;
     dispatch_time_t notifyAt = DISPATCH_TIME_NOW;
@@ -97,6 +103,15 @@ enum {
         loc += 20;
         len = ((NSInteger)len - 20 < 0) ? 0 : len-20;
     }
+}
+
+- (void) send:(NSData *)data to:(XNPeerId *)peer {
+    [self send:data to:peer as:HEADER_KEY_NORMAL];
+}
+
+- (void) sendURL:(NSURL *)url to:(XNPeerId *)peer {
+    NSData *data = [[url absoluteString] dataUsingEncoding:NSUTF8StringEncoding];
+    [self send:data to:peer as:HEADER_KEY_URL];
 }
 
 @end

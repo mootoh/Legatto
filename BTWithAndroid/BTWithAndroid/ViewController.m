@@ -16,7 +16,6 @@
 @property XNPeerId *peerId;
 @property (weak) ViewController *viewController;
 
-- (void) send:(NSString *)message;
 @end
 
 @implementation XNNearByWrap
@@ -62,12 +61,6 @@
     [self.viewController appendTextToLog:[NSString stringWithFormat:@"%@: %@", peer.identifier, received]];
 }
 
-- (void) send:(NSString *)message {
-    if (! [self isReady])
-        return;
-    [self.session send:[message dataUsingEncoding:NSUTF8StringEncoding] to:self.peerId];
-}
-
 - (BOOL) isReady {
     return self.session != nil && self.peerId != nil;
 }
@@ -104,8 +97,18 @@
 - (IBAction) sendText {
     NSString *text = self.inputTextField.text;
     NSLog(@"sending text: %@", text);
-    [self.xn send:text];
-    [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
+
+    if ([text hasPrefix:@"http"] && [text hasSuffix:@"jpg"]) {
+        NSURL *url = [NSURL URLWithString:text];
+        if ([self.xn isReady]) {
+            [self.xn.session sendURL:url to:self.xn.peerId];
+        }
+    } else {
+        if ([self.xn isReady]) {
+            [self.xn.session send:[text dataUsingEncoding:NSUTF8StringEncoding] to:self.xn.peerId];
+        }
+        [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
+    }
     self.inputTextField.text = @"";
 }
 

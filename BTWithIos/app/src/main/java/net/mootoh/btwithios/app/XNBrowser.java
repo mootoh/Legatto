@@ -16,12 +16,15 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 interface XNBrowserDelegate {
     void didGetReady();
     void didReceive(byte[] bytes);
+    void didReceiveURL(URL url);
     void didDisconnect();
 }
 
@@ -44,6 +47,10 @@ public class XNBrowser {
     static final String CONTROLLER_UUID = "5AE0C50F-2C8E-4336-AEAC-F1AF0A325006";
     static final long SCAN_PERIOD = 10000;
     static final String TAG = "XNBrowser";
+
+    static final int HEADER_KEY_NORMAL = 0x03;
+    static final int HEADER_KEY_URL    = 0x05;
+
 
     private String identifier = "an";
 
@@ -214,6 +221,7 @@ public class XNBrowser {
             }
 
             int notificationStatus = 0;
+            int currentMode = 0;
             int hasRead = 0;
             int toRead = 0;
             ByteBuffer buf;
@@ -223,7 +231,8 @@ public class XNBrowser {
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 if (notificationStatus == 0) { // message begins, header first
                     byte[] header = characteristic.getValue();
-                    assert header[0] == 3;
+                    assert header[0] == HEADER_KEY_NORMAL || header[0] == HEADER_KEY_URL;
+                    currentMode = header[0];
                     hasRead = 0;
                     toRead = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
                     buf = ByteBuffer.allocate(toRead);
@@ -241,7 +250,19 @@ public class XNBrowser {
                     notificationStatus = 0;
 
                     if (delegate_ != null) {
-                        delegate_.didReceive(buf.array());
+                        if (currentMode == HEADER_KEY_NORMAL)
+                            delegate_.didReceive(buf.array());
+                        if (currentMode == HEADER_KEY_URL) {
+                            String urlString = new String(buf.array());
+                            URL url = null;
+                            try {
+                                url = new URL(urlString);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            }
+                            delegate_.didReceiveURL(url);
+                        }
+                        currentMode = 0;
                     }
                 }
             }

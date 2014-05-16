@@ -8,7 +8,9 @@
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="net.mootoh.btwithios.app.MainActivity"
     android:orientation="vertical"
-    android:focusable="false">
+    android:focusable="false"
+    android:id="@+id/rootLinearLayout"
+    >
 
     <ScrollView
         android:layout_width="fill_parent"
