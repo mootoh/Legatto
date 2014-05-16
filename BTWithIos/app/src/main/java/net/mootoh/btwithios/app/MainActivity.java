@@ -9,12 +9,10 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
 
 public class MainActivity extends Activity implements XNBrowserDelegate {
@@ -39,7 +37,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String str = v.getText().toString();
                 browser_.send(str.getBytes());
-                appendText("\n   " + str);
+                appendText("me: " + str);
                 et.getEditableText().clear();
                 return true;
             }
@@ -95,7 +93,12 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
 
     @Override
     public void didGetReady() {
-        sendSome();
+        appendText("--- connected");
+    }
+
+    @Override
+    public void didDisconnect() {
+        appendText("--- disconnected");
     }
 
     @Override
@@ -107,7 +110,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             e.printStackTrace();
         }
         Log.d(TAG, "didReceive: " + str);
-        appendText("\n   " + str);
+        appendText("   " + str);
     }
 
     private void sendSome() {
@@ -119,7 +122,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             @Override
             public void run() {
                 TextView tv = (TextView) findViewById(R.id.recvTextView);
-                tv.append(text);
+                tv.append("\n" + text);
             }
         });
     }

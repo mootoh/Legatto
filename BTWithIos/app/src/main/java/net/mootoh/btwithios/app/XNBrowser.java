@@ -22,6 +22,7 @@ import java.util.UUID;
 interface XNBrowserDelegate {
     void didGetReady();
     void didReceive(byte[] bytes);
+    void didDisconnect();
 }
 
 class BTLEHandler {
@@ -151,6 +152,10 @@ public class XNBrowser {
                 }
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 //                    Log.d("###", "GATT disconnected");
+                    if (delegate_ != null) {
+                        delegate_.didDisconnect();
+                    }
+
                     gatt_ = null;
                 }
             }
@@ -159,10 +164,8 @@ public class XNBrowser {
             @Override
             public void onServicesDiscovered(final BluetoothGatt gatt, int status) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-//                    Log.d("###", "service discovered");
                     for (final BluetoothGattService service : gatt.getServices()) {
                         if (service.getUuid().equals(UUID.fromString(SERVICE_UUID))) {
-//                            Log.d("###", "found iPhone!");
                             service_ = service;
 
                             openPortForOutput(service, gatt);
@@ -170,8 +173,6 @@ public class XNBrowser {
                             return;
                         }
                     }
-                } else {
-//                    Log.w("###", "onServicesDiscovered received: " + status);
                 }
             }
 
@@ -205,6 +206,9 @@ public class XNBrowser {
 
                 if (status == BluetoothGatt.GATT_SUCCESS && characteristic.equals(controlPort_)) {
                     hasIdentifierSet = true;
+                    if (delegate_ != null) {
+                        delegate_.didGetReady();
+                    }
                 }
             }
 
