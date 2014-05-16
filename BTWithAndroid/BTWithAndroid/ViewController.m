@@ -88,10 +88,13 @@
 }
 
 - (void) scrollLogToBottom {
+    NSRange bottom = NSMakeRange(self.logTextView.text.length-1, 1);
+    [self.logTextView scrollRangeToVisible:bottom];
 }
 
 - (void) appendTextToLog:(NSString *)text {
     self.logTextView.text = [self.logTextView.text stringByAppendingFormat:@"\n%@", text];
+    [self scrollLogToBottom];
 }
 
 - (void) appendAttributedTextToLog:(NSAttributedString *)attributedString {
@@ -104,7 +107,6 @@
     [self.xn send:text];
     [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
     self.inputTextField.text = @"";
-//    [self scrollLogToBottom];
 }
 
 #pragma mark - UITextFieldDelegate
