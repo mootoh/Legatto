@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -24,8 +25,11 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
+        TextView tv = (TextView)findViewById(R.id.recvTextView);
+        tv.setMovementMethod(new ScrollingMovementMethod());
+
         browser_ = new XNBrowser(this);
         browser_.setDelegate(this);
 
@@ -35,6 +39,7 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String str = v.getText().toString();
                 browser_.send(str.getBytes());
+                appendText("\n   " + str);
                 et.getEditableText().clear();
                 return true;
             }
@@ -102,18 +107,20 @@ public class MainActivity extends Activity implements XNBrowserDelegate {
             e.printStackTrace();
         }
         Log.d(TAG, "didReceive: " + str);
-
-        final String finalStr = str;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                TextView tv = (TextView) findViewById(R.id.receivedTextView);
-                tv.setText(finalStr);
-            }
-        });
+        appendText("\n   " + str);
     }
 
     private void sendSome() {
         browser_.send("written from android".getBytes());
+    }
+
+    private void appendText(final String text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView tv = (TextView) findViewById(R.id.recvTextView);
+                tv.append(text);
+            }
+        });
     }
 }

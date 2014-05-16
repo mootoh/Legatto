@@ -57,6 +57,7 @@ public class XNBrowser {
     private BluetoothGattCharacteristic outpPort_;
     private BluetoothGattCharacteristic inPort_;
     private BluetoothGatt gatt_;
+    private boolean hasIdentifierSet = false;
 
     public XNBrowser(final Context context) {
         this.context_ = context;
@@ -201,6 +202,10 @@ public class XNBrowser {
                     Log.d("###", "onCharacteristicWrite: write not permitted");
                     return;
                 }
+
+                if (status == BluetoothGatt.GATT_SUCCESS && characteristic.equals(controlPort_)) {
+                    hasIdentifierSet = true;
+                }
             }
 
             int notificationStatus = 0;
@@ -268,6 +273,22 @@ public class XNBrowser {
                 }
             }
         });
+
+        setIdentifier(service, gatt);
+    }
+
+    private void setIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
+        trySetIdentifier(service, gatt);
+        btHandler_.post(new Runnable() {
+            @Override
+            public void run() {
+                if (! hasIdentifierSet) {
+                    trySetIdentifier(service, gatt);
+                }
+            }
+        });
+    }
+    private void trySetIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
         btHandler_.post(new Runnable() {
             @Override
             public void run() {
