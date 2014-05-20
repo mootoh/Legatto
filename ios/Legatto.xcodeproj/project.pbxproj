@@ -1,0 +1,420 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FC829363192B1D88008E47A7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC829362192B1D88008E47A7 /* Foundation.framework */; };
+		FC829368192B1D88008E47A7 /* Legatto.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = FC829367192B1D88008E47A7 /* Legatto.h */; };
+		FC82936A192B1D88008E47A7 /* Legatto.m in Sources */ = {isa = PBXBuildFile; fileRef = FC829369192B1D88008E47A7 /* Legatto.m */; };
+		FC829371192B1D88008E47A7 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC829370192B1D88008E47A7 /* XCTest.framework */; };
+		FC829372192B1D88008E47A7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC829362192B1D88008E47A7 /* Foundation.framework */; };
+		FC829374192B1D88008E47A7 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC829373192B1D88008E47A7 /* UIKit.framework */; };
+		FC829377192B1D88008E47A7 /* libLegatto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC82935F192B1D88008E47A7 /* libLegatto.a */; };
+		FC82937D192B1D88008E47A7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FC82937B192B1D88008E47A7 /* InfoPlist.strings */; };
+		FC82937F192B1D88008E47A7 /* LegattoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FC82937E192B1D88008E47A7 /* LegattoTests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FC829375192B1D88008E47A7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FC829357192B1D87008E47A7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FC82935E192B1D88008E47A7;
+			remoteInfo = Legatto;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FC82935D192B1D88008E47A7 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				FC829368192B1D88008E47A7 /* Legatto.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		FC82935F192B1D88008E47A7 /* libLegatto.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libLegatto.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC829362192B1D88008E47A7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		FC829366192B1D88008E47A7 /* Legatto-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Legatto-Prefix.pch"; sourceTree = "<group>"; };
+		FC829367192B1D88008E47A7 /* Legatto.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Legatto.h; sourceTree = "<group>"; };
+		FC829369192B1D88008E47A7 /* Legatto.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Legatto.m; sourceTree = "<group>"; };
+		FC82936F192B1D88008E47A7 /* LegattoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LegattoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC829370192B1D88008E47A7 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		FC829373192B1D88008E47A7 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+		FC82937A192B1D88008E47A7 /* LegattoTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "LegattoTests-Info.plist"; sourceTree = "<group>"; };
+		FC82937C192B1D88008E47A7 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		FC82937E192B1D88008E47A7 /* LegattoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LegattoTests.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FC82935C192B1D88008E47A7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC829363192B1D88008E47A7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FC82936C192B1D88008E47A7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC829371192B1D88008E47A7 /* XCTest.framework in Frameworks */,
+				FC829374192B1D88008E47A7 /* UIKit.framework in Frameworks */,
+				FC829377192B1D88008E47A7 /* libLegatto.a in Frameworks */,
+				FC829372192B1D88008E47A7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FC829356192B1D87008E47A7 = {
+			isa = PBXGroup;
+			children = (
+				FC829364192B1D88008E47A7 /* Legatto */,
+				FC829378192B1D88008E47A7 /* LegattoTests */,
+				FC829361192B1D88008E47A7 /* Frameworks */,
+				FC829360192B1D88008E47A7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FC829360192B1D88008E47A7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FC82935F192B1D88008E47A7 /* libLegatto.a */,
+				FC82936F192B1D88008E47A7 /* LegattoTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FC829361192B1D88008E47A7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FC829362192B1D88008E47A7 /* Foundation.framework */,
+				FC829370192B1D88008E47A7 /* XCTest.framework */,
+				FC829373192B1D88008E47A7 /* UIKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FC829364192B1D88008E47A7 /* Legatto */ = {
+			isa = PBXGroup;
+			children = (
+				FC829367192B1D88008E47A7 /* Legatto.h */,
+				FC829369192B1D88008E47A7 /* Legatto.m */,
+				FC829365192B1D88008E47A7 /* Supporting Files */,
+			);
+			path = Legatto;
+			sourceTree = "<group>";
+		};
+		FC829365192B1D88008E47A7 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				FC829366192B1D88008E47A7 /* Legatto-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		FC829378192B1D88008E47A7 /* LegattoTests */ = {
+			isa = PBXGroup;
+			children = (
+				FC82937E192B1D88008E47A7 /* LegattoTests.m */,
+				FC829379192B1D88008E47A7 /* Supporting Files */,
+			);
+			path = LegattoTests;
+			sourceTree = "<group>";
+		};
+		FC829379192B1D88008E47A7 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				FC82937A192B1D88008E47A7 /* LegattoTests-Info.plist */,
+				FC82937B192B1D88008E47A7 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FC82935E192B1D88008E47A7 /* Legatto */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FC829382192B1D88008E47A7 /* Build configuration list for PBXNativeTarget "Legatto" */;
+			buildPhases = (
+				FC82935B192B1D88008E47A7 /* Sources */,
+				FC82935C192B1D88008E47A7 /* Frameworks */,
+				FC82935D192B1D88008E47A7 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Legatto;
+			productName = Legatto;
+			productReference = FC82935F192B1D88008E47A7 /* libLegatto.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		FC82936E192B1D88008E47A7 /* LegattoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FC829385192B1D88008E47A7 /* Build configuration list for PBXNativeTarget "LegattoTests" */;
+			buildPhases = (
+				FC82936B192B1D88008E47A7 /* Sources */,
+				FC82936C192B1D88008E47A7 /* Frameworks */,
+				FC82936D192B1D88008E47A7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FC829376192B1D88008E47A7 /* PBXTargetDependency */,
+			);
+			name = LegattoTests;
+			productName = LegattoTests;
+			productReference = FC82936F192B1D88008E47A7 /* LegattoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FC829357192B1D87008E47A7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = mootoh.net;
+			};
+			buildConfigurationList = FC82935A192B1D87008E47A7 /* Build configuration list for PBXProject "Legatto" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FC829356192B1D87008E47A7;
+			productRefGroup = FC829360192B1D88008E47A7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FC82935E192B1D88008E47A7 /* Legatto */,
+				FC82936E192B1D88008E47A7 /* LegattoTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FC82936D192B1D88008E47A7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC82937D192B1D88008E47A7 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FC82935B192B1D88008E47A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC82936A192B1D88008E47A7 /* Legatto.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FC82936B192B1D88008E47A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC82937F192B1D88008E47A7 /* LegattoTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FC829376192B1D88008E47A7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FC82935E192B1D88008E47A7 /* Legatto */;
+			targetProxy = FC829375192B1D88008E47A7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		FC82937B192B1D88008E47A7 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				FC82937C192B1D88008E47A7 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		FC829380192B1D88008E47A7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		FC829381192B1D88008E47A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FC829383192B1D88008E47A7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/Legatto.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Legatto/Legatto-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		FC829384192B1D88008E47A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/Legatto.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Legatto/Legatto-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		FC829386192B1D88008E47A7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Legatto/Legatto-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "LegattoTests/LegattoTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		FC829387192B1D88008E47A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Legatto/Legatto-Prefix.pch";
+				INFOPLIST_FILE = "LegattoTests/LegattoTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FC82935A192B1D87008E47A7 /* Build configuration list for PBXProject "Legatto" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FC829380192B1D88008E47A7 /* Debug */,
+				FC829381192B1D88008E47A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FC829382192B1D88008E47A7 /* Build configuration list for PBXNativeTarget "Legatto" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FC829383192B1D88008E47A7 /* Debug */,
+				FC829384192B1D88008E47A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		FC829385192B1D88008E47A7 /* Build configuration list for PBXNativeTarget "LegattoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FC829386192B1D88008E47A7 /* Debug */,
+				FC829387192B1D88008E47A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FC829357192B1D87008E47A7 /* Project object */;
+}

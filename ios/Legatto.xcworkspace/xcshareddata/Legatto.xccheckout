@@ -5,20 +5,20 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>7B1CF26C-CFC3-4D47-AD89-7A6026DC01D4</string>
+	<string>F88A6BB5-09DF-4E79-817A-CB77F563CD36</string>
 	<key>IDESourceControlProjectName</key>
-	<string>BTWithAndroid</string>
+	<string>Legatto</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
 		<key>FE16CF68-8567-46C7-B0F5-DBDDC4223B8F</key>
 		<string>ssh://github.com/mootoh/xNearBy.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>BTWithAndroid/BTWithAndroid.xcodeproj/project.xcworkspace</string>
+	<string>ios/Legatto.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>FE16CF68-8567-46C7-B0F5-DBDDC4223B8F</key>
-		<string>../../..</string>
+		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>ssh://github.com/mootoh/xNearBy.git</string>

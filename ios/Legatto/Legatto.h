@@ -1,6 +1,6 @@
 //
-//  XNNearBy.h
-//  BTWithAndroid
+//  Legatto.h
+//  Legatto
 //
 //  Created by Motohiro Takayama on 5/13/14.
 //  Copyright (c) 2014 mootoh.net. All rights reserved.

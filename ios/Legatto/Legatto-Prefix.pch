@@ -1,0 +1,15 @@
+//
+//  Prefix header
+//
+//  The contents of this file are implicitly included at the beginning of every source file.
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+#endif
+
+#define k_serviceUUIDStirng @"688C7F90-F424-4BC0-8508-AEDE43A4288D"
+#define k_characteristicControllerUUIDString @"5AE0C50F-2C8E-4336-AEAC-F1AF0A325006"
+#define k_characteristicNotifierUUIDString   @"42015324-6E63-412D-9B7F-257024D56460"
+#define k_characteristicReceiverUUIDStirng   @"721AC875-945E-434A-93D8-7AD8C740A51A"
+#define k_localName @"btbt"

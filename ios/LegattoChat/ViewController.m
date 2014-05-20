@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BTWithAndroid
+//  Legatto
 //
 //  Created by Motohiro Takayama on 5/1/14.
 //  Copyright (c) 2014 mootoh.net. All rights reserved.
@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "AFNetworking/AFNetworking.h"
-#import "XNNearBy.h"
+#import "Legatto.h"
 
 @interface XNNearByWrap : NSObject <XNAdvertiserDelegate, XNSessionDelegate>
 @property (nonatomic) XNAdvertiser *advertiser;

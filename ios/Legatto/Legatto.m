@@ -1,12 +1,12 @@
 //
-//  XNNearBy.m
-//  BTWithAndroid
+//  Legatto.m
+//  Legatto
 //
 //  Created by Motohiro Takayama on 5/13/14.
 //  Copyright (c) 2014 mootoh.net. All rights reserved.
 //
 
-#import "XNNearBy.h"
+#import "Legatto.h"
 
 @interface XNPeerId ()
 @property (nonatomic, strong) NSUUID *uuid;
@@ -166,7 +166,7 @@ enum {
 - (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didSubscribeToCharacteristic:(CBCharacteristic *)characteristic {
     NSLog(@"%s, subscribed from %@", __PRETTY_FUNCTION__, central.identifier);
     self.subscribedPeers[central.identifier] = @1;
-
+    
     XNSession *session = [self sessionFor:central];
     XNPeerId *peer = [self peerIdFor:central];
     
@@ -174,7 +174,7 @@ enum {
     
     self.state |= STATE_SUBSCRIBED;
     [self checkReady:peer session:session];
-
+    
     if ([self.delegate respondsToSelector:@selector(gotReadyForSend:session:)]) {
         [self.delegate gotReadyForSend:peer session:session];
     }
@@ -182,14 +182,14 @@ enum {
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didUnsubscribeFromCharacteristic:(CBCharacteristic *)characteristic {
     NSLog(@"%s, unsubscribed %@", __PRETTY_FUNCTION__, central.identifier);
-
+    
     XNSession *session = [self sessionFor:central];
     XNPeerId *peer = [self peerIdFor:central];
-
+    
     if ([self.delegate respondsToSelector:@selector(didDisconnect:session:)]) {
         [self.delegate didDisconnect:peer session:session];
     }
-
+    
     [self.subscribedPeers removeObjectForKey:central.identifier];
     [self.sessions removeObjectForKey:central.identifier];
     [self.peers removeObjectForKey:central.identifier];
@@ -198,7 +198,7 @@ enum {
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveReadRequest:(CBATTRequest *)request {
     NSLog(@"%s from %@", __PRETTY_FUNCTION__, request.central.identifier);
-
+    
     if (self.subscribedPeers[request.central.identifier]) {
         Byte value = {0x01};
         NSData *data = [NSData dataWithBytes:&value length:1];
@@ -229,11 +229,11 @@ enum {
             NSString *identifier = [[NSString alloc] initWithBytes:buf+1 length:len-1 encoding:NSUTF8StringEncoding];
             NSLog(@"identifier = %@", identifier);
             peerId.identifier = identifier;
-
+            
             self.state |= STATE_IDENTIFIER_RECEIVED;
             [self checkReady:peerId session:session];
         }
-            
+        
         [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
         return;
     }
