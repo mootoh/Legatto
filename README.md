@@ -14,3 +14,8 @@ Sending/receiving a photo is fake, since iOS device posts a photo to a web serve
 
 - It assumes 1 to 1 communication between iOS and Android devices. It can be extended to multiple devices with no hassle.
 - Connection gets unstable sometimes.
+
+
+### License
+
+MIT
