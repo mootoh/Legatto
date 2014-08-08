@@ -2,13 +2,13 @@ package net.mootoh.legatto.chatapp;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import net.mootoh.legatto.Browser;
 import net.mootoh.legatto.BrowserDelegate;
+import net.mootoh.legatto.Session;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +34,7 @@ public class MainActivity extends Activity implements BrowserDelegate {
     public static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 1;
     private Browser browser_;
+    private Session session_;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +52,8 @@ public class MainActivity extends Activity implements BrowserDelegate {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String str = v.getText().toString();
-                if (browser_.isReady())
-                    browser_.send(str.getBytes());
+                if (session_ != null && session_.isReady())
+                    session_.send(str.getBytes());
                 appendText("me: " + str);
                 et.getEditableText().clear();
                 return true;
@@ -107,17 +109,20 @@ public class MainActivity extends Activity implements BrowserDelegate {
     }
 
     @Override
-    public void didGetReady() {
-        appendText("--- connected");
+    public void onSessionReady(Session session) {
+        appendText("--- onSessionReady");
+        this.session_ = session;
     }
 
     @Override
-    public void didDisconnect() {
-        appendText("--- disconnected");
+    public void onSessionClosed(Session session) {
+        appendText("--- onSessionClosed");
+        this.session_ = null;
+
     }
 
     @Override
-    public void didReceive(byte[] bytes) {
+    public void onReceived(Session session, byte[] bytes) {
         String str = "";
         try {
             str = new String(bytes, "UTF-8");
@@ -157,7 +162,7 @@ public class MainActivity extends Activity implements BrowserDelegate {
         }
     }
     @Override
-    public void didReceiveURL(final URL url) {
+    public void onReceivedURL(Session session, final URL url) {
         final MainActivity self = this;
         runOnUiThread(new Runnable() {
             @Override
@@ -165,7 +170,7 @@ public class MainActivity extends Activity implements BrowserDelegate {
                 final ImageView iv = new ImageView(self, null);
                 ImageDownloadTask task = new ImageDownloadTask(iv);
                 task.execute(url);
-                final LinearLayout layout = (LinearLayout)findViewById(R.id.rootLinearLayout);
+                final LinearLayout layout = (LinearLayout) findViewById(R.id.rootLinearLayout);
                 layout.addView(iv);
 
                 iv.setOnTouchListener(new View.OnTouchListener() {
