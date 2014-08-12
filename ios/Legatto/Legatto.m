@@ -8,6 +8,8 @@
 
 #import "Legatto.h"
 
+#define CMD_BRODCAST_JOINED_PEER 0x1
+
 @interface XNPeerId ()
 @property (nonatomic, strong) NSUUID *uuid;
 - (id) initWithIdentifier:(NSUUID *)uuid;
@@ -26,10 +28,11 @@ enum {
 @interface XNAdvertiser ()
 @property (readonly, nonatomic, strong) CBPeripheralManager *cbPeripheralManager;
 @property (nonatomic, strong) CBMutableService *service;
-@property (nonatomic, strong) NSMutableDictionary *sessions;
+@property (nonatomic, strong) XNSession *session;
 @property (nonatomic, strong) NSMutableDictionary *peers;
 @property (nonatomic, strong) NSMutableDictionary *subscribedPeers;
 @property (nonatomic, strong) CBCharacteristic *controlCharacteristic;
+@property (nonatomic, strong) CBCharacteristic *notifyCharacteristic;
 @property int state;
 @end
 
@@ -60,6 +63,10 @@ enum {
 
 @interface XNSession ()
 @property (nonatomic, weak) XNAdvertiser *advertiser;
+@property (nonatomic) NSMutableSet *peers;
+
+- (void) addPeer:(XNPeerId *)peer;
+- (void) removePeer:(XNPeerId *)peer;
 @end
 
 @implementation XNSession
@@ -68,6 +75,7 @@ enum {
     self = [super init];
     if (self) {
         self.advertiser = advertiser;
+        self.peers = [NSMutableSet set];
     }
     return self;
 }
@@ -114,6 +122,14 @@ enum {
     [self send:data to:peer as:HEADER_KEY_URL];
 }
 
+- (void) addPeer:(XNPeerId *)peer {
+    [self.peers addObject:peer];
+}
+
+- (void) removePeer:(XNPeerId *)peer {
+    [self.peers removeObject:peer];
+}
+
 @end
 
 #pragma mark - XNAdvertiser
@@ -124,7 +140,7 @@ enum {
     self = [super init];
     if (self) {
         _cbPeripheralManager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil];
-        self.sessions = [NSMutableDictionary dictionary];
+        self.session = [[XNSession alloc] initWithAdvertiser:self];
         self.peers = [NSMutableDictionary dictionary];
         self.subscribedPeers = [NSMutableDictionary dictionary];
         self.state = 0;
@@ -158,7 +174,7 @@ enum {
         return;
     }
     
-    NSDictionary *advertising = @{ CBAdvertisementDataLocalNameKey: k_localName, CBAdvertisementDataServiceUUIDsKey: @[self.service.UUID] };
+    NSDictionary *advertising = @{ CBAdvertisementDataLocalNameKey: k_localName, CBAdvertisementDataServiceUUIDsKey: @[[CBUUID UUIDWithString:k_serviceUUIDStirng]] };
     [self.cbPeripheralManager startAdvertising:advertising];
     NSLog(@"advertising started");
 }
@@ -167,31 +183,39 @@ enum {
     NSLog(@"%s, subscribed from %@", __PRETTY_FUNCTION__, central.identifier);
     self.subscribedPeers[central.identifier] = @1;
     
-    XNSession *session = [self sessionFor:central];
     XNPeerId *peer = [self peerIdFor:central];
+    peer.characteristic = (CBMutableCharacteristic *)characteristic;
+    [self.session addPeer:peer];
     
-    peer.characteristic = characteristic;
+    // broadcast all peers
+    uuid_t uuid;
+    [central.identifier getUUIDBytes:uuid];
+    uint8_t cmd = CMD_BRODCAST_JOINED_PEER;
+    
+    NSMutableData *msg = [NSMutableData dataWithBytes:&cmd length:1];
+    [msg appendBytes:uuid length:sizeof(uuid_t)];
+    
+    [self.cbPeripheralManager updateValue:msg forCharacteristic:(CBMutableCharacteristic *)self.notifyCharacteristic onSubscribedCentrals:nil];
     
     self.state |= STATE_SUBSCRIBED;
-    [self checkReady:peer session:session];
+    [self checkReady:peer session:self.session];
     
     if ([self.delegate respondsToSelector:@selector(gotReadyForSend:session:)]) {
-        [self.delegate gotReadyForSend:peer session:session];
+        [self.delegate gotReadyForSend:peer session:self.session];
     }
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didUnsubscribeFromCharacteristic:(CBCharacteristic *)characteristic {
     NSLog(@"%s, unsubscribed %@", __PRETTY_FUNCTION__, central.identifier);
     
-    XNSession *session = [self sessionFor:central];
     XNPeerId *peer = [self peerIdFor:central];
+    [self.session removePeer:peer];
     
     if ([self.delegate respondsToSelector:@selector(didDisconnect:session:)]) {
-        [self.delegate didDisconnect:peer session:session];
+        [self.delegate didDisconnect:peer session:self.session];
     }
     
     [self.subscribedPeers removeObjectForKey:central.identifier];
-    [self.sessions removeObjectForKey:central.identifier];
     [self.peers removeObjectForKey:central.identifier];
     self.state = 0;
 }
@@ -218,7 +242,6 @@ enum {
     }
     NSLog(@"%s from %@", __PRETTY_FUNCTION__, central.identifier);
     
-    XNSession *session = [self sessionFor:central];
     XNPeerId *peerId = [self peerIdFor:central];
     
     CBATTRequest *firstRequest = requests[0];
@@ -231,7 +254,7 @@ enum {
             peerId.identifier = identifier;
             
             self.state |= STATE_IDENTIFIER_RECEIVED;
-            [self checkReady:peerId session:session];
+            [self checkReady:peerId session:self.session];
         }
         
         [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
@@ -244,8 +267,8 @@ enum {
         [concatenated appendData:request.value];
     }
     
-    if ([session.delegate respondsToSelector:@selector(didReceive:from:)]) {
-        [session.delegate didReceive:concatenated from:peerId];
+    if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
+        [self.session.delegate didReceive:concatenated from:peerId];
     }
     
     [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
@@ -261,16 +284,6 @@ enum {
     return peer;
 }
 
-- (XNSession *) sessionFor:(CBCentral *)central {
-    XNSession *session = self.sessions[central.identifier];
-    if (! session) {
-        NSLog(@"creating new session for %@", central.identifier);
-        session = [[XNSession alloc] initWithAdvertiser:self];
-        self.sessions[central.identifier] = session;
-    }
-    return session;
-}
-
 - (void)peripheralManagerDidStartAdvertising:(CBPeripheralManager *)peripheral error:(NSError *)error {
     NSLog(@"%s error=%@", __PRETTY_FUNCTION__, error);
 }
@@ -284,9 +297,10 @@ enum {
 @implementation XNAdvertiser (Private)
 
 - (CBMutableCharacteristic *) characteristicForNotifier {
-    CBUUID *characteristicUUID = [CBUUID UUIDWithString:k_characteristicNotifierUUIDString];
-    CBCharacteristicProperties props = CBCharacteristicPropertyNotify;
-    return [[CBMutableCharacteristic alloc] initWithType:characteristicUUID properties:props value:nil permissions:0];
+    return [[CBMutableCharacteristic alloc] initWithType:[CBUUID UUIDWithString:k_characteristicNotifierUUIDString]
+                                              properties:CBCharacteristicPropertyNotify
+                                                   value:nil
+                                             permissions:CBAttributePermissionsReadable];
 }
 
 - (CBMutableCharacteristic *) characteristicForReceiver {
@@ -305,9 +319,11 @@ enum {
 - (CBMutableService *) setupService {
     CBUUID *serviceUUID = [CBUUID UUIDWithString:k_serviceUUIDStirng];
     CBMutableService *service = [[CBMutableService alloc] initWithType:serviceUUID primary:YES];
-    
-    self.controlCharacteristic = [self characteristicForController];
-    service.characteristics = @[[self characteristicForNotifier], [self characteristicForReceiver], self.controlCharacteristic];
+
+    self.notifyCharacteristic = [self characteristicForNotifier];
+//    self.controlCharacteristic = [self characteristicForController];
+//    service.characteristics = @[[self characteristicForNotifier], [self characteristicForReceiver], self.controlCharacteristic];
+    service.characteristics = @[self.notifyCharacteristic];
     return service;
 }
 

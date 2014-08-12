@@ -47,8 +47,8 @@ public class Session {
         gatt_ = gatt;
         btleThread_.start();
 
-        openPortForOutput(service);
-        openPortForInput(service, gatt);
+//        openPortForOutput(service);
+        observeNotification(service);
     }
 
     public void send(final byte[] bytes) {
@@ -73,54 +73,44 @@ public class Session {
         outPort_ = chr;
     }
 
-    private void openPortForInput(final BluetoothGattService service, final BluetoothGatt gatt) {
-        // Observe
-        btleThread_.post(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "observing..............");
-                BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
-                if (chr == null) {
-                    Log.d("###", "no such characteristic for notification:" + NOTIFIER_UUID);
-                    return;
-                }
-                if (!gatt.setCharacteristicNotification(chr, true)) {
-                    throw new RuntimeException("failed to setCharacteristicNotification to gatt");
-                }
+    private void observeNotification(final BluetoothGattService service) {
+        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
+        if (chr == null) {
+            Log.d("###", "no such characteristic for notification:" + NOTIFIER_UUID);
+            return;
+        }
+        if (!gatt_.setCharacteristicNotification(chr, true)) {
+            throw new RuntimeException("failed to setCharacteristicNotification to gatt");
+        }
 
-                boolean enabled = false;
-                for (BluetoothGattDescriptor descriptor : chr.getDescriptors()) {
-                    Log.d("---", "descriptor: " + descriptor.getUuid());
-                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                    if (gatt.writeDescriptor(descriptor)) {
-                        enabled = true;
-                    }
-                }
-                if (!enabled) {
-                    Log.d("---", "failed to enable notification to characteristic");
-                    throw new RuntimeException("failed to enable notification to characteristic");
-                }
+        boolean enabled = false;
+        for (BluetoothGattDescriptor descriptor : chr.getDescriptors()) {
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            if (gatt_.writeDescriptor(descriptor)) {
+                enabled = true;
             }
-        });
-
-        setIdentifier(service, gatt);
+        }
+        if (!enabled) {
+            Log.d("---", "failed to enable notification to characteristic");
+            throw new RuntimeException("failed to enable notification to characteristic");
+        }
     }
 
     private void setIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
         trySetIdentifier(service, gatt);
-        btleThread_.post(new Runnable() {
-            @Override
-            public void run() {
+//        btleThread_.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (!hasIdentifierSet) {
                     trySetIdentifier(service, gatt);
                 }
-            }
-        });
+//            }
+//        });
     }
     private void trySetIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
-        btleThread_.post(new Runnable() {
-            @Override
-            public void run() {
+//        btleThread_.post(new Runnable() {
+//            @Override
+//            public void run() {
                 Log.d(TAG, "controller..............");
                 BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(CONTROLLER_UUID));
                 if (chr == null) {
@@ -139,8 +129,8 @@ public class Session {
                 if (!hasWrite) {
                     Log.d("###", "failed in write request to controller");
                 }
-            }
-        });
+//            }
+//        });
     }
 
     public boolean isReady() {
@@ -179,5 +169,9 @@ public class Session {
                 }
             }
         });
+    }
+
+    public void openPorts() {
+
     }
 }

@@ -10,6 +10,8 @@
 	<string>Legatto</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
+		<key>49FAB83C3BDF9563632BD3620AD3242B9791C8FD</key>
+		<string>github.com:mootoh/Legatto.git</string>
 		<key>FCB77BA9-1393-4E71-9E54-52E12EB4F66F</key>
 		<string>ssh://github.com/mootoh/Legatto.git</string>
 	</dict>
@@ -17,17 +19,27 @@
 	<string>ios/Legatto.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>FCB77BA9-1393-4E71-9E54-52E12EB4F66F</key>
+		<key>49FAB83C3BDF9563632BD3620AD3242B9791C8FD</key>
 		<string>../..</string>
+		<key>FCB77BA9-1393-4E71-9E54-52E12EB4F66F</key>
+		<string>../../../xNearBy</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>ssh://github.com/mootoh/Legatto.git</string>
+	<string>github.com:mootoh/Legatto.git</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>FCB77BA9-1393-4E71-9E54-52E12EB4F66F</string>
+	<string>49FAB83C3BDF9563632BD3620AD3242B9791C8FD</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>49FAB83C3BDF9563632BD3620AD3242B9791C8FD</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Legatto</string>
+		</dict>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>

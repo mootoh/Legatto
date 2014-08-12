@@ -14,9 +14,12 @@ import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -25,19 +28,16 @@ import java.util.UUID;
  */
 public class Browser {
     static final String SERVICE_UUID = "688C7F90-F424-4BC0-8508-AEDE43A4288D";
-    static final String ADVERTISER_LOCAL_NAME = "btbt";
     static final long SCAN_PERIOD = 10000;
     static final String TAG = "legatto.Browser";
 
+    static final int CMD_BRODCAST_JOINED_PEER = 0x01;
     static final int HEADER_KEY_NORMAL = 0x03;
     static final int HEADER_KEY_URL    = 0x05;
 
     private final Context context_;
     private BluetoothAdapter bluetoothAdapter_;
-    private Handler handler_ = new Handler();
-    private boolean scanning_ = false;
     private BrowserDelegate delegate_;
-
     private HashMap<BluetoothGatt, Session> sessions_ = new HashMap<BluetoothGatt, Session>();
 
     /**
@@ -68,25 +68,12 @@ public class Browser {
         return bluetoothAdapter_.isEnabled();
     }
 
-    /**
-     * Start scanning for advertisers. Stop scanning after SCAN_PERIOD msec.
-     */
     public void startScan() {
-        // stop the discovery when timeout
-        handler_.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                stopScan();
-            }
-        }, SCAN_PERIOD);
-
         bluetoothAdapter_.startLeScan(leScanCallback_);
-        scanning_ = true;
     }
 
     public void stopScan() {
         bluetoothAdapter_.stopLeScan(leScanCallback_);
-        scanning_ = false;
     }
 
     public void setDelegate(BrowserDelegate dg) {
@@ -96,30 +83,25 @@ public class Browser {
     private BluetoothAdapter.LeScanCallback leScanCallback_ = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-            if (! scanning_)
-                return;
-
-            if (device.getName().equals(ADVERTISER_LOCAL_NAME)) {
-                stopScan();
-                connect(device);
-            }
+            stopScan();
+            connect(device);
         }
     };
 
     protected void connect(BluetoothDevice device) {
         device.connectGatt(context_, false, new BluetoothGattCallback() {
-            // will start discovery on connected successfully
+            // will start discovery if connected successfully
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
-
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     gatt.discoverServices();
                 }
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     if (delegate_ != null) {
                         Session session = sessions_.get(gatt);
-                        delegate_.onSessionClosed(session);
+                        if (session != null)
+                            delegate_.onSessionClosed(session);
                     }
                     sessions_.remove(gatt);
                 }
@@ -167,6 +149,23 @@ public class Browser {
             // Notification
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                byte[] value = characteristic.getValue();
+                Log.d(TAG, "onCharacteristicChanged : " + value.length);
+
+                switch (value[0]) {
+                    case CMD_BRODCAST_JOINED_PEER:
+                        ByteBuffer bb = ByteBuffer.wrap(value);
+                        long msb = bb.getLong(1);
+                        long lsb = bb.getLong(9);
+                        UUID uuid = new UUID(msb, lsb);
+                        Log.d(TAG, "new peer has joined on this session: " + uuid.toString());
+
+                        Session session = sessions_.get(gatt);
+                        session.openPorts();
+
+                        return;
+                }
+
                 if (notificationStatus == 0) { // message begins, header first
                     byte[] header = characteristic.getValue();
                     assert header[0] == HEADER_KEY_NORMAL || header[0] == HEADER_KEY_URL;
