@@ -34,6 +34,7 @@ class BTLEThread extends Thread {
 public class Session {
     static final String NOTIFIER_UUID = "42015324-6E63-412D-9B7F-257024D56460";
     static final String CONTROLLER_UUID = "5AE0C50F-2C8E-4336-AEAC-F1AF0A325006";
+
     static final String TAG = "legatto.Session";
 
     private BluetoothGatt gatt_;
@@ -47,8 +48,8 @@ public class Session {
         gatt_ = gatt;
         btleThread_.start();
 
-//        openPortForOutput(service);
         observeNotification(service);
+        openPortForOutput(service);
     }
 
     public void send(final byte[] bytes) {
@@ -65,6 +66,23 @@ public class Session {
         });
     }
 
+    public void sendToAll(final byte[] bytes) {
+//        byte[] cmd = {CMD_SEND_TO_ALL};
+//        outPort_.setValue(cmd);
+        ByteBuffer bb = ByteBuffer.allocate(1 + bytes.length);
+        bb.put(Browser.CMD_SEND_TO_ALL);
+        bb.put(bytes);
+        outPort_.setValue(bb.array());
+
+        if (! gatt_.writeCharacteristic(outPort_)) {
+            Log.d(TAG, "failed in sending to all");
+        }
+    }
+
+    public void sendTo(final byte[] bytes, final Peer peer) {
+
+    }
+
     private void openPortForOutput(BluetoothGattService service) {
         BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("721AC875-945E-434A-93D8-7AD8C740A51A"));
         if (chr == null) {
@@ -75,10 +93,8 @@ public class Session {
 
     private void observeNotification(final BluetoothGattService service) {
         BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
-        if (chr == null) {
-            Log.d("###", "no such characteristic for notification:" + NOTIFIER_UUID);
-            return;
-        }
+        if (chr == null)
+            throw new RuntimeException("no such characteristic for notification:" + NOTIFIER_UUID);
         if (!gatt_.setCharacteristicNotification(chr, true)) {
             throw new RuntimeException("failed to setCharacteristicNotification to gatt");
         }
@@ -90,10 +106,8 @@ public class Session {
                 enabled = true;
             }
         }
-        if (!enabled) {
-            Log.d("---", "failed to enable notification to characteristic");
+        if (!enabled)
             throw new RuntimeException("failed to enable notification to characteristic");
-        }
     }
 
     private void setIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {

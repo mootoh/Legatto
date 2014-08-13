@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import net.mootoh.legatto.Browser;
 import net.mootoh.legatto.BrowserDelegate;
+import net.mootoh.legatto.Peer;
 import net.mootoh.legatto.Session;
 
 import java.io.IOException;
@@ -52,8 +53,8 @@ public class MainActivity extends Activity implements BrowserDelegate {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String str = v.getText().toString();
-                if (session_ != null && session_.isReady())
-                    session_.send(str.getBytes());
+                if (session_ != null)
+                    session_.sendToAll(str.getBytes());
                 appendText("me: " + str);
                 et.getEditableText().clear();
                 return true;
@@ -109,8 +110,8 @@ public class MainActivity extends Activity implements BrowserDelegate {
     }
 
     @Override
-    public void onSessionReady(Session session) {
-        appendText("--- onSessionReady");
+    public void onSessionOpened(Session session) {
+        appendText("--- onSessionOpened");
         this.session_ = session;
     }
 
@@ -122,7 +123,7 @@ public class MainActivity extends Activity implements BrowserDelegate {
     }
 
     @Override
-    public void onReceived(Session session, byte[] bytes) {
+    public void onReceived(Session session, Peer from, byte[] bytes) {
         String str = "";
         try {
             str = new String(bytes, "UTF-8");

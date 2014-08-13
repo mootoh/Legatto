@@ -33,6 +33,7 @@ enum {
 @property (nonatomic, strong) NSMutableDictionary *subscribedPeers;
 @property (nonatomic, strong) CBCharacteristic *controlCharacteristic;
 @property (nonatomic, strong) CBCharacteristic *notifyCharacteristic;
+@property (nonatomic, strong) CBCharacteristic *receiverCharacteristic;
 @property int state;
 @end
 
@@ -81,36 +82,35 @@ enum {
 }
 
 - (void) send:(NSData *)data to:(XNPeerId *)peer as:(NSInteger)key {
+    static uint8_t s_messageID = 0;
+
+    NSAssert(data.length < UINT8_MAX, @"message body size should be less than 256 bytes");
+
+    NSUInteger remaining = data.length;
+    
     // hash data into chunks of 20 octets
-    NSUInteger len = data.length;
-    uint32_t ulen = (uint32_t)len;
-    
-    // header
-    char buf[8];
-    buf[0] = key;
-    memcpy(buf+1, &ulen, sizeof(ulen));
-    NSData *header = [NSData dataWithBytes:buf length:5];
-    
-    if (! [self.advertiser.cbPeripheralManager updateValue:header forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
-        NSLog(@"failed to send header data");
-    }
-    
-    // body
     NSUInteger loc = 0;
     dispatch_time_t notifyAt = DISPATCH_TIME_NOW;
-    while (len > 0) {
+    while (remaining > 0) {
         notifyAt = dispatch_time(notifyAt, (int64_t)(100 * NSEC_PER_MSEC)); // tricky here, since BT LE queue can be easily fulled up.
         
         dispatch_after(notifyAt, dispatch_get_main_queue(), ^{
-            NSUInteger lengthToSend = MIN(20, len);
+            NSUInteger lengthToSend = MIN(20-3, remaining);
             NSData *chunk = [data subdataWithRange:NSMakeRange(loc, lengthToSend)];
-            if (! [self.advertiser.cbPeripheralManager updateValue:chunk forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
-                NSLog(@"failed to send body data %d, %d %d", loc, lengthToSend, len);
+
+            // header
+            uint8_t header[3] = {0x04, s_messageID, (uint8_t)remaining};
+            
+            NSMutableData *dataToSend = [NSMutableData dataWithBytes:header length:sizeof(header)];
+            [dataToSend appendData:chunk];
+//            if (! [self.advertiser.cbPeripheralManager updateValue:dataToSend forCharacteristic:peer.characteristic onSubscribedCentrals:nil]) {
+            if (! [self.advertiser.cbPeripheralManager updateValue:dataToSend forCharacteristic:self.advertiser.notifyCharacteristic onSubscribedCentrals:nil]) {                NSLog(@"failed to send body data %d, %d %d", loc, lengthToSend, remaining);
             }
         });
         loc += 20;
-        len = ((NSInteger)len - 20 < 0) ? 0 : len-20;
+        remaining = ((NSInteger)remaining - 20 < 0) ? 0 : remaining-20;
     }
+    s_messageID++;
 }
 
 - (void) send:(NSData *)data to:(XNPeerId *)peer {
@@ -149,7 +149,7 @@ enum {
 }
 
 - (void) checkReady:(XNPeerId *)peer session:(XNSession *)session {
-    if (self.state & STATE_SUBSCRIBED && self.state & STATE_IDENTIFIER_RECEIVED) {
+    if (self.state & STATE_SUBSCRIBED) {
         if ([self.delegate respondsToSelector:@selector(didConnect:session:)]) {
             [self.delegate didConnect:peer session:session];
         }
@@ -257,12 +257,23 @@ enum {
             [self checkReady:peerId session:self.session];
         }
         
+        
         [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
         return;
     }
     
     NSMutableData *concatenated = [NSMutableData data];
-    
+
+    char *buf = (char *)firstRequest.value.bytes;
+    if (buf[0] == 0x03) { // send_to_all
+        [self.session send:firstRequest.value to:nil];
+        
+        if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
+            [self.session.delegate didReceive:firstRequest.value from:peerId];
+        }
+
+    }
+/*
     for (CBATTRequest *request in requests) {
         [concatenated appendData:request.value];
     }
@@ -270,7 +281,7 @@ enum {
     if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
         [self.session.delegate didReceive:concatenated from:peerId];
     }
-    
+  */
     [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
 }
 
@@ -321,9 +332,11 @@ enum {
     CBMutableService *service = [[CBMutableService alloc] initWithType:serviceUUID primary:YES];
 
     self.notifyCharacteristic = [self characteristicForNotifier];
-//    self.controlCharacteristic = [self characteristicForController];
+    self.receiverCharacteristic = [self characteristicForReceiver];
+
+    //    self.controlCharacteristic = [self characteristicForController];
 //    service.characteristics = @[[self characteristicForNotifier], [self characteristicForReceiver], self.controlCharacteristic];
-    service.characteristics = @[self.notifyCharacteristic];
+    service.characteristics = @[self.notifyCharacteristic, self.receiverCharacteristic];
     return service;
 }
 
