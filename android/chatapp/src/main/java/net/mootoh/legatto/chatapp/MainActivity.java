@@ -47,25 +47,18 @@ public class MainActivity extends Activity implements BrowserDelegate {
                 return true;
             }
         });
+
+        connect();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (! browser_.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            return;
-        }
-
-        browser_.startScan();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        browser_.stopScan();
     }
 
     @Override
@@ -90,8 +83,14 @@ public class MainActivity extends Activity implements BrowserDelegate {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.action_leave:
+                session_.leave();
+                return true;
+            case R.id.action_connect:
+                connect();
+                return true;
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -99,14 +98,13 @@ public class MainActivity extends Activity implements BrowserDelegate {
     @Override
     public void onSessionOpened(Session session) {
         appendText("--- onSessionOpened");
-        this.session_ = session;
+        session_ = session;
     }
 
     @Override
     public void onSessionClosed(Session session) {
         appendText("--- onSessionClosed");
-        this.session_ = null;
-
+        session_ = null;
     }
 
     @Override
@@ -147,5 +145,15 @@ public class MainActivity extends Activity implements BrowserDelegate {
                 });
             }
         });
+    }
+
+    private void connect() {
+        if (! browser_.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            return;
+        }
+
+        browser_.startScan();
     }
 }

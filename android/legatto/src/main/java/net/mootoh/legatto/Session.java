@@ -19,6 +19,7 @@ public class Session {
 
     private final BluetoothGatt gatt_;
     private final BluetoothGattCharacteristic outPort_;
+    private final BluetoothGattCharacteristic notifyPort_;
 
     enum SendMode {
         DONE,
@@ -34,7 +35,11 @@ public class Session {
     protected Session(BluetoothGatt gatt, BluetoothGattService service) {
         gatt_ = gatt;
 
-        observeNotification(service);
+        notifyPort_ = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
+        if (notifyPort_ == null)
+            throw new RuntimeException("no such characteristic for notification:" + NOTIFIER_UUID);
+
+        observeNotification();
 
         outPort_ = service.getCharacteristic(UUID.fromString(OUTPORT_UUID));
         if (outPort_ == null) {
@@ -87,23 +92,32 @@ public class Session {
         return null;
     }
 
-    private void observeNotification(final BluetoothGattService service) {
-        BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(NOTIFIER_UUID));
-        if (chr == null)
-            throw new RuntimeException("no such characteristic for notification:" + NOTIFIER_UUID);
-        if (!gatt_.setCharacteristicNotification(chr, true)) {
-            throw new RuntimeException("failed to setCharacteristicNotification to gatt");
-        }
+    public void leave() {
+        unobserveNotification();
+        gatt_.disconnect();
+        gatt_.close();
+    }
 
-        boolean enabled = false;
-        for (BluetoothGattDescriptor descriptor : chr.getDescriptors()) {
+    private void observeNotification() {
+        if (! gatt_.setCharacteristicNotification(notifyPort_, true))
+            throw new RuntimeException("failed to enable setCharacteristicNotification");
+
+        for (BluetoothGattDescriptor descriptor : notifyPort_.getDescriptors()) {
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            if (gatt_.writeDescriptor(descriptor)) {
-                enabled = true;
-            }
+            if (! gatt_.writeDescriptor(descriptor))
+                throw new RuntimeException("failed to enable notification to characteristic");
         }
-        if (!enabled)
-            throw new RuntimeException("failed to enable notification to characteristic");
+    }
+
+    private void unobserveNotification() {
+        if (! gatt_.setCharacteristicNotification(notifyPort_, false))
+            throw new RuntimeException("failed to disable setCharacteristicNotification");
+
+        for (BluetoothGattDescriptor descriptor : notifyPort_.getDescriptors()) {
+            descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+            if (! gatt_.writeDescriptor(descriptor))
+                throw new RuntimeException("failed to disable notification to characteristic");
+        }
     }
 
     protected void onRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {

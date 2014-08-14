@@ -2,8 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="net.mootoh.legatto.chatapp.MainActivity" >
-    <item android:id="@+id/action_settings"
-        android:title="@string/action_settings"
+    <item android:id="@+id/action_connect"
+        android:title="@string/action_connect"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
+    <item android:id="@+id/action_leave"
+        android:title="@string/action_leave"
         android:orderInCategory="100"
         app:showAsAction="never" />
 </menu>
