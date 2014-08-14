@@ -12,4 +12,8 @@ public class Peer {
         this.uuid_ = uuid_;
     }
 
+    @Override
+    public String toString() {
+        return this.uuid_.toString();
+    }
 }

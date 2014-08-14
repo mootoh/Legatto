@@ -9,6 +9,8 @@ public interface BrowserDelegate {
     void onSessionOpened(Session session);
     void onSessionClosed(Session session);
 
+    void onPeerJoined(Session session, Peer peer);
+    void onPeerLeft(Session session, Peer peer);
+
     void onReceived(Session session, Peer from, byte[] bytes);
-    void onReceivedURL(Session session, URL url);
 }

@@ -157,10 +157,11 @@ public class Browser {
                         long msb = bb.getLong(1);
                         long lsb = bb.getLong(9);
                         UUID uuid = new UUID(msb, lsb);
-                        Log.d(TAG, "new peer has joined on this session: " + uuid.toString());
 
-                        session_.openPorts();
-
+                        Peer peer = new Peer(uuid);
+                        if (delegate_ != null) {
+                            delegate_.onPeerJoined(session_, peer);
+                        }
                         return;
                     }
                     case CMD_BROADCAST_PEER_LEFT: {
