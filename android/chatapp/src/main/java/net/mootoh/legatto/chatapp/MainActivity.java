@@ -45,8 +45,7 @@ public class MainActivity extends Activity implements BrowserDelegate {
         TextView tv = (TextView)findViewById(R.id.recvTextView);
         tv.setMovementMethod(new ScrollingMovementMethod());
 
-        browser_ = new Browser(this);
-        browser_.setDelegate(this);
+        browser_ = new Browser(this, this);
 
         final EditText et = (EditText)findViewById(R.id.sendEditText);
         et.setOnEditorActionListener(new TextView.OnEditorActionListener() {

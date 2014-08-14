@@ -31,24 +31,24 @@ public class Browser {
 
     static final byte CMD_BROADCAST_PEER_JOINED = 0x01;
     static final byte CMD_BROADCAST_PEER_LEFT   = 0x02;
-    public static final byte CMD_SEND_TO_ALL = 0x03;
+    static final byte CMD_SEND_TO_ALL = 0x03;
     static final byte CMD_BROADCAST_MESSAGE = 0x04;
 
-    static final int HEADER_KEY_NORMAL = 0x03;
-    static final int HEADER_KEY_URL    = 0x05;
     private static final byte MTU = 20;
 
     private final Context context_;
     private final BluetoothAdapter bluetoothAdapter_;
-    private BrowserDelegate delegate_;
+    private final BrowserDelegate delegate_;
     private final Set<Session> sessions_ = new HashSet<Session>();
+    Map<Byte, ByteBuffer> buffers = new HashMap();
 
     /**
      * Setup BT LE with current context.
      * @throws java.lang.RuntimeException if BT is not available on device.
      */
-    public Browser(final Context context) {
+    public Browser(final Context context, final BrowserDelegate delegate) {
         context_ = context;
+        delegate_ = delegate;
 
         // Initializes a Bluetooth adapter. For API level 18 and above, get a reference to BluetoothAdapter through BluetoothManager.
         if (!context_.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -73,10 +73,6 @@ public class Browser {
 
     public void stopScan() {
         bluetoothAdapter_.stopLeScan(leScanCallback_);
-    }
-
-    public void setDelegate(BrowserDelegate dg) {
-        delegate_ = dg;
     }
 
     private final BluetoothAdapter.LeScanCallback leScanCallback_ = new BluetoothAdapter.LeScanCallback() {
@@ -148,14 +144,6 @@ public class Browser {
                 session_.onWrite(characteristic, status);
             }
 
-            int notificationStatus = 0;
-            int currentMode = 0;
-            int hasRead = 0;
-            int toRead = 0;
-            ByteBuffer buf;
-
-            Map<Byte, ByteBuffer> buffers = new HashMap();
-
             // Notification
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
@@ -201,46 +189,6 @@ public class Browser {
                         }
                     }
                 }
-
-/*
-                if (notificationStatus == 0) { // message begins, header first
-                    byte[] header = characteristic.getValue();
-                    assert header[0] == HEADER_KEY_NORMAL || header[0] == HEADER_KEY_URL;
-                    currentMode = header[0];
-                    hasRead = 0;
-                    toRead = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
-                    buf = ByteBuffer.allocate(toRead);
-
-                    notificationStatus = 1;
-                    return;
-                }
-*/
-                /*
-                // body
-                byte[] val = characteristic.getValue();
-                hasRead += val.length;
-                buf.put(val);
-
-                if (hasRead >= toRead) {
-                    notificationStatus = 0;
-
-                    if (delegate_ != null) {
-                        if (currentMode == HEADER_KEY_NORMAL)
-                            delegate_.onReceived(session_, null, buf.array());
-                        if (currentMode == HEADER_KEY_URL) {
-                            String urlString = new String(buf.array());
-                            URL url = null;
-                            try {
-                                url = new URL(urlString);
-                            } catch (MalformedURLException e) {
-                                e.printStackTrace();
-                            }
-                            delegate_.onReceivedURL(session_, url);
-                        }
-                        currentMode = 0;
-                    }
-                }
-                */
             }
         });
     }
