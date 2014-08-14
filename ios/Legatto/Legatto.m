@@ -34,6 +34,7 @@ enum {
 @property (nonatomic, strong) CBCharacteristic *controlCharacteristic;
 @property (nonatomic, strong) CBCharacteristic *notifyCharacteristic;
 @property (nonatomic, strong) CBCharacteristic *receiverCharacteristic;
+@property (nonatomic, strong) NSMutableDictionary *receivedData;
 @property int state;
 @end
 
@@ -93,9 +94,9 @@ enum {
     dispatch_time_t notifyAt = DISPATCH_TIME_NOW;
     while (remaining > 0) {
         notifyAt = dispatch_time(notifyAt, (int64_t)(100 * NSEC_PER_MSEC)); // tricky here, since BT LE queue can be easily fulled up.
+        NSUInteger lengthToSend = MIN(20-3, remaining);
         
         dispatch_after(notifyAt, dispatch_get_main_queue(), ^{
-            NSUInteger lengthToSend = MIN(20-3, remaining);
             NSData *chunk = [data subdataWithRange:NSMakeRange(loc, lengthToSend)];
 
             // header
@@ -107,8 +108,8 @@ enum {
             if (! [self.advertiser.cbPeripheralManager updateValue:dataToSend forCharacteristic:self.advertiser.notifyCharacteristic onSubscribedCentrals:nil]) {                NSLog(@"failed to send body data %d, %d %d", loc, lengthToSend, remaining);
             }
         });
-        loc += 20;
-        remaining = ((NSInteger)remaining - 20 < 0) ? 0 : remaining-20;
+        loc += lengthToSend;
+        remaining -= lengthToSend;
     }
     s_messageID++;
 }
@@ -144,6 +145,7 @@ enum {
         self.peers = [NSMutableDictionary dictionary];
         self.subscribedPeers = [NSMutableDictionary dictionary];
         self.state = 0;
+        self.receivedData = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -262,26 +264,31 @@ enum {
         return;
     }
     
-    NSMutableData *concatenated = [NSMutableData data];
+    for (CBATTRequest *req in requests) {
+        char *buf = (char *)req.value.bytes;
+        if (buf[0] == 0x03) { // send_to_all
+            int msg_id = buf[1];
+            int remaining = buf[2];
+            
+            NSMutableData *received = self.receivedData[[NSNumber numberWithInt:msg_id]];
+            if (! received) {
+                received = [NSMutableData data];
+                self.receivedData[[NSNumber numberWithInt:msg_id]] = received;
+            }
+            
+            [received appendBytes:buf+3 length:req.value.length-3];
+            if (remaining <= 20-3) {
+                [self.session send:received to:nil];
 
-    char *buf = (char *)firstRequest.value.bytes;
-    if (buf[0] == 0x03) { // send_to_all
-        [self.session send:firstRequest.value to:nil];
-        
-        if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
-            [self.session.delegate didReceive:firstRequest.value from:peerId];
+                if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
+                    [self.session.delegate didReceive:received from:peerId];
+                }
+                
+                [self.receivedData removeObjectForKey:[NSNumber numberWithInt:msg_id]];
+            }
         }
+    }
 
-    }
-/*
-    for (CBATTRequest *request in requests) {
-        [concatenated appendData:request.value];
-    }
-    
-    if ([self.session.delegate respondsToSelector:@selector(didReceive:from:)]) {
-        [self.session.delegate didReceive:concatenated from:peerId];
-    }
-  */
     [peripheral respondToRequest:requests[0] withResult:CBATTErrorSuccess];
 }
 

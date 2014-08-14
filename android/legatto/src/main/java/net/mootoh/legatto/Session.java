@@ -38,11 +38,8 @@ public class Session {
     static final String TAG = "legatto.Session";
 
     private BluetoothGatt gatt_;
-    private BluetoothGattCharacteristic controlPort_;
     private BluetoothGattCharacteristic outPort_;
     private BTLEThread btleThread_ = new BTLEThread();
-    private boolean hasIdentifierSet = false;
-    private String identifier = "an";
 
     protected Session(BluetoothGatt gatt, BluetoothGattService service) {
         gatt_ = gatt;
@@ -52,27 +49,47 @@ public class Session {
         openPortForOutput(service);
     }
 
-    public void send(final byte[] bytes) {
-        btleThread_.post(new Runnable() {
-            @Override
-            public void run() {
-                outPort_.setValue(bytes);
-                boolean hasWritten = gatt_.writeCharacteristic(outPort_);
-                if (!hasWritten) {
-                    Log.d(TAG, "failed in write request");
-                }
-                Log.d(TAG, "writeSome finished");
-            }
-        });
-    }
+    enum SendMode {
+        DONE,
+        SEND_TO_ALL,
+        SEND_TO
+    };
+
+    private SendMode sendMode_;
+    private byte[] sendingBytes_;
+    private int sendingBytesIndex_;
 
     public void sendToAll(final byte[] bytes) {
-//        byte[] cmd = {CMD_SEND_TO_ALL};
-//        outPort_.setValue(cmd);
-        ByteBuffer bb = ByteBuffer.allocate(1 + bytes.length);
+        sendMode_ = SendMode.SEND_TO_ALL;
+        sendingBytes_ = bytes;
+        sendingBytesIndex_ = 0;
+
+        sendChunkToAll();
+    }
+
+    byte msg_id = 0;
+
+    private void sendChunkToAll() {
+        assert sendMode_ == SendMode.SEND_TO_ALL;
+
+        int remaining = sendingBytes_.length - sendingBytesIndex_;
+        if (remaining <= 0) {
+            sendMode_ = SendMode.DONE;
+            sendingBytesIndex_ = 0;
+            sendingBytes_ = null;
+            msg_id++;
+            return;
+        }
+
+        int toSend = Math.min(remaining, 20-3);
+
+        ByteBuffer bb = ByteBuffer.allocate(3 + toSend);
         bb.put(Browser.CMD_SEND_TO_ALL);
-        bb.put(bytes);
+        bb.put(msg_id);
+        bb.put((byte)remaining);
+        bb.put(sendingBytes_, sendingBytesIndex_, toSend);
         outPort_.setValue(bb.array());
+        sendingBytesIndex_ += toSend;
 
         if (! gatt_.writeCharacteristic(outPort_)) {
             Log.d(TAG, "failed in sending to all");
@@ -81,6 +98,10 @@ public class Session {
 
     public void sendTo(final byte[] bytes, final Peer peer) {
 
+    }
+
+    public Peer[] getPeers() {
+        return null;
     }
 
     private void openPortForOutput(BluetoothGattService service) {
@@ -110,82 +131,18 @@ public class Session {
             throw new RuntimeException("failed to enable notification to characteristic");
     }
 
-    private void setIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
-        trySetIdentifier(service, gatt);
-//        btleThread_.post(new Runnable() {
-//            @Override
-//            public void run() {
-                if (!hasIdentifierSet) {
-                    trySetIdentifier(service, gatt);
-                }
-//            }
-//        });
-    }
-    private void trySetIdentifier(final BluetoothGattService service, final BluetoothGatt gatt) {
-//        btleThread_.post(new Runnable() {
-//            @Override
-//            public void run() {
-                Log.d(TAG, "controller..............");
-                BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString(CONTROLLER_UUID));
-                if (chr == null) {
-                    Log.d("###", "no such characteristic for controller:" + CONTROLLER_UUID);
-                    return;
-                }
-                controlPort_ = chr;
-
-                ByteBuffer bb = ByteBuffer.allocate(1 + identifier.length());
-                byte code = 0x05;
-                bb.put(code);
-                bb.put(identifier.getBytes());
-                chr.setValue(bb.array());
-
-                boolean hasWrite = gatt.writeCharacteristic(chr);
-                if (!hasWrite) {
-                    Log.d("###", "failed in write request to controller");
-                }
-//            }
-//        });
+    protected void onRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
     }
 
-    public boolean isReady() {
-        return hasIdentifierSet;
-    }
-
-    public void onRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-    }
-
-    protected boolean onWrite(BluetoothGattCharacteristic characteristic, int status) {
+    protected void onWrite(BluetoothGattCharacteristic characteristic, int status) {
         if (status == BluetoothGatt.GATT_WRITE_NOT_PERMITTED) {
             Log.d("###", "onCharacteristicWrite: write not permitted");
-            return false;
-        }
-
-        if (status == BluetoothGatt.GATT_SUCCESS && characteristic.equals(controlPort_)) {
-            hasIdentifierSet = true;
-            return true;
-        }
-        return false;
-    }
-
-    private void readSome(BluetoothGattService service, final BluetoothGatt gatt) {
-        final BluetoothGattCharacteristic chr = service.getCharacteristic(UUID.fromString("9321525D-08B6-4BDC-90C7-0C2B6234C52B"));
-        if (chr == null) {
-            Log.d("###", "no such characteristic");
             return;
         }
-
-        btleThread_.post(new Runnable() {
-            @Override
-            public void run() {
-                boolean hasRead = gatt.readCharacteristic(chr);
-                if (!hasRead) {
-                    Log.d("###", "failed in read request");
-                }
-            }
-        });
+        if (sendMode_ == SendMode.SEND_TO_ALL)
+            sendChunkToAll();
     }
 
     public void openPorts() {
-
     }
 }
