@@ -10,4 +10,8 @@
         android:title="@string/action_leave"
         android:orderInCategory="100"
         app:showAsAction="never" />
+    <item android:id="@+id/action_send_to"
+        android:title="@string/action_send_to"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
 </menu>

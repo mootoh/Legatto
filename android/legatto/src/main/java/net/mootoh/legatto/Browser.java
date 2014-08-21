@@ -33,8 +33,10 @@ public class Browser {
     static final byte CMD_BROADCAST_PEER_LEFT   = 0x02;
     static final byte CMD_SEND_TO_ALL = 0x03;
     static final byte CMD_BROADCAST_MESSAGE = 0x04;
+    static final byte CMD_SEND_TO = 0x05;
 
-    private static final byte MTU = 20;
+    static final byte MTU = 20;
+    public static final byte CMD_SYNC_PEERS = 0x06;
 
     private final Context context_;
     private final BluetoothAdapter bluetoothAdapter_;
@@ -88,10 +90,11 @@ public class Browser {
     };
 
     // connected -> discover service -> create a session
-    // disconnected -> delete the seession
+    // disconnected -> delete the session
     protected void connect(BluetoothDevice device) {
         device.connectGatt(context_, false, new BluetoothGattCallback() {
             Session session_;
+            Peer myself_;
 
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -148,30 +151,32 @@ public class Browser {
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 byte[] value = characteristic.getValue();
-                Log.d(TAG, "onCharacteristicChanged : " + value.length);
 
                 switch (value[0]) {
                     case CMD_BROADCAST_PEER_JOINED: {
-                        // cmd[1B], UUID[16B]
-                        ByteBuffer bb = ByteBuffer.wrap(value);
-                        long msb = bb.getLong(1);
-                        long lsb = bb.getLong(9);
-                        UUID uuid = new UUID(msb, lsb);
+                        Peer peer = new Peer(value[1]);
+                        Log.d(TAG, "Peer joined: " + value[1]);
+                        session_.addPeer(peer);
 
-                        Peer peer = new Peer(uuid);
-                        if (delegate_ != null) {
-                            delegate_.onPeerJoined(session_, peer);
+                        if (myself_ == null) {
+                            myself_ = peer;
+                            session_.requestAllPeers();
+                        } else {
+                            if (delegate_ != null) {
+                                delegate_.onPeerJoined(session_, peer);
+                            }
                         }
-                        return;
+                        break;
                     }
                     case CMD_BROADCAST_PEER_LEFT: {
-                        // cmd[1B], UUID[16B]
+                        session_.removePeer(value[1]);
                         break;
                     }
                     case CMD_BROADCAST_MESSAGE: {
                         // cmd[1B], messageID[1B], remaining message size[1B], message payload[<=17B]
                         byte id = value[1];
                         byte remaining = value[2];
+                        byte from = value[3];
 
                         ByteBuffer bb = buffers.get(id);
                         if (bb == null) {
@@ -179,15 +184,44 @@ public class Browser {
                             buffers.put(id, bb);
                         }
 
-                        bb.put(Arrays.copyOfRange(value, 3, value.length));
+                        bb.put(Arrays.copyOfRange(value, 4, value.length));
 
-                        if (remaining <= MTU - 3) { // 1 for cmd, 1 for length
+                        if (remaining <= MTU - 4) { // 1 for cmd, 1 for length
+                            // received completely
+                            if (delegate_ != null) {
+                                Peer fromPeer = session_.getPeer(from);
+                                delegate_.onReceived(session_, fromPeer, bb.array());
+                            }
+                            bb.clear();
+                            buffers.remove(id);
+                        }
+                        break;
+                    }
+                    case CMD_SEND_TO: {
+                        // cmd[1B], messageID[1B], remaining message size[1B], to[1B], message payload[<=16B]
+                        byte id = value[1];
+                        byte remaining = value[2];
+                        byte sendTo = value[3];
+
+                        if (myself_.getIdentifier() != sendTo)
+                            break;
+
+                        ByteBuffer bb = buffers.get(id);
+                        if (bb == null) {
+                            bb = ByteBuffer.allocate(remaining);
+                            buffers.put(id, bb);
+                        }
+
+                        bb.put(Arrays.copyOfRange(value, 4, value.length));
+
+                        if (remaining <= MTU - 4) { // 1 for cmd, 1 for length
                             // received completely
                             if (delegate_ != null)
                                 delegate_.onReceived(session_, null, bb.array());
                             bb.clear();
                             buffers.remove(id);
                         }
+                        break;
                     }
                 }
             }

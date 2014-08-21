@@ -9,25 +9,26 @@
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
 
-@interface XNPeerId : NSObject <NSCopying>
+@interface XNPeer : NSObject <NSCopying>
 @property (nonatomic, strong) CBMutableCharacteristic *characteristic;
-@property (nonatomic, strong) NSString *identifier;
+@property (nonatomic, strong) NSString *name;
+@property (nonatomic) uint8_t identifier;
 @end
 
 @protocol XNSessionDelegate
-- (void) didReceive:(NSData *)data from:(XNPeerId *)peer;
+- (void) didReceive:(NSData *)data from:(XNPeer *)peer;
 @end
 
 @interface XNSession : NSObject
 @property (nonatomic, weak) NSObject <XNSessionDelegate> *delegate;
-- (void) send:(NSData *)data to:(XNPeerId *)peer;
-- (void) sendURL:(NSURL *)url to:(XNPeerId *)peer;
+- (void) send:(NSData *)data from:(XNPeer *)fromPeer to:(XNPeer *)toPeer;
+- (void) sendURL:(NSURL *)url to:(XNPeer *)peer;
 @end
 
 @protocol XNAdvertiserDelegate
-- (void) didConnect:(XNPeerId *)peer session:(XNSession *)session;
-- (void) didDisconnect:(XNPeerId *)peer session:(XNSession *)session;
-- (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session;
+- (void) didConnect:(XNPeer *)peer session:(XNSession *)session;
+- (void) didDisconnect:(XNPeer *)peer session:(XNSession *)session;
+- (void) gotReadyForSend:(XNPeer *)peer session:(XNSession *)session;
 @end
 
 @interface XNAdvertiser : NSObject <CBPeripheralManagerDelegate>

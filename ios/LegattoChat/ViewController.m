@@ -14,7 +14,7 @@
 @interface XNNearByWrap : NSObject <XNAdvertiserDelegate, XNSessionDelegate>
 @property (nonatomic) XNAdvertiser *advertiser;
 @property XNSession *session;
-@property XNPeerId *peerId;
+@property XNPeer *peerId;
 @property (weak) ViewController *viewController;
 
 @end
@@ -31,35 +31,35 @@
     return self;
 }
 
-- (void) didConnect:(XNPeerId *)peer session:(XNSession *)session {
+- (void) didConnect:(XNPeer *)peer session:(XNSession *)session {
     session.delegate = self;
-    NSLog(@"connected to peer");
+    NSLog(@"connected to peer: %u", peer.identifier);
     /*
     NSMutableAttributedString *as = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"   %@ connected", peer.identifier]];
     [as addAttribute:NSForegroundColorAttributeName value:[UIColor grayColor] range:NSMakeRange(0, as.length)];
     [self.viewController appendAttributedTextToLog:as];
      */
-    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %@ connected", peer.identifier]];
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %u connected", peer.identifier]];
 }
 
-- (void) didDisconnect:(XNPeerId *)peer session:(XNSession *)session {
+- (void) didDisconnect:(XNPeer *)peer session:(XNSession *)session {
     self.session = nil;
     self.peerId = nil;
 
-    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %@ disconnected", peer.identifier]];
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"   %u disconnected", peer.identifier]];
 }
 
-- (void) gotReadyForSend:(XNPeerId *)peer session:(XNSession *)session {
+- (void) gotReadyForSend:(XNPeer *)peer session:(XNSession *)session {
     self.session = session;
     self.peerId = peer;
 }
 
-- (void) didReceive:(NSData *)data from:(XNPeerId *)peer {
+- (void) didReceive:(NSData *)data from:(XNPeer *)peer {
     if (! [self isReady])
         return;
     NSString *received = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"received from %@: %@", peer.identifier, received);
-    [self.viewController appendTextToLog:[NSString stringWithFormat:@"%@: %@", peer.identifier, received]];
+    NSLog(@"received from %u: %@", peer.identifier, received);
+    [self.viewController appendTextToLog:[NSString stringWithFormat:@"%u: %@", peer.identifier, received]];
 }
 
 - (BOOL) isReady {
@@ -106,7 +106,7 @@
         }
     } else {
         if ([self.xn isReady]) {
-            [self.xn.session send:[text dataUsingEncoding:NSUTF8StringEncoding] to:self.xn.peerId];
+            [self.xn.session send:[text dataUsingEncoding:NSUTF8StringEncoding] from:nil to:self.xn.peerId];
         }
         [self appendTextToLog:[NSString stringWithFormat:@"me: %@", text]];
     }

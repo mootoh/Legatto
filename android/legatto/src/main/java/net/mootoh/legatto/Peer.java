@@ -6,14 +6,13 @@ import java.util.UUID;
  * represents a peer participating in a session.
  */
 public class Peer {
-    private final UUID uuid_;
+    private byte identifier_;
 
-    Peer(UUID uuid_) {
-        this.uuid_ = uuid_;
+    public Peer(byte identifier) {
+        identifier_ = identifier;
     }
 
-    @Override
-    public String toString() {
-        return this.uuid_.toString();
+    public byte getIdentifier() {
+        return identifier_;
     }
 }

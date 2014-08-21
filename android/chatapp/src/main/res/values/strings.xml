@@ -4,5 +4,6 @@
     <string name="app_name">Legatto Chat</string>
     <string name="action_leave">Leave</string>
     <string name="action_connect">Connect</string>
+    <string name="action_send_to">Send To...</string>
 
 </resources>
